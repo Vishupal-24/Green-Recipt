@@ -14,32 +14,36 @@ const CustomerLogin = () => {
     setLoading(true);
     setError("");
     try {
-    // 🔗 CONNECT TO BACKEND: LOGIN
-    const response = await fetch('http://localhost:5001/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: email,
-        password: password,
-        role: 'customer' // Optional: Backend might need to know who is logging in
-      }),
-    });
+      // 🔗 CONNECT TO BACKEND: LOGIN
+      const response = await fetch("http://localhost:5001/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+          role: "customer", // Optional: Backend might need to know who is logging in
+        }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      // SAVE THE TOKEN (Important for staying logged in)
-      localStorage.setItem('token', data.token); 
-      localStorage.setItem('role', 'customer');
-      console.log("Login Success! Saving token...");
-      navigate('/customer-dashboard');
-    } else {
-      alert(data.message || "Login failed");
+      if (response.ok) {
+        // SAVE THE TOKEN (Important for staying logged in)
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", "customer");
+        console.log("Login Success! Saving token...");
+        navigate("/customer-dashboard");
+      } else {
+        alert(data.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Login Error");
     }
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Login Error");
-  }
+    finally {
+      // 🛑 STOP LOADING (This runs whether success OR fail)
+      setLoading(false);
+    }
   };
 
   return (
@@ -110,12 +114,13 @@ const CustomerLogin = () => {
                 />
               </div>
               <div className="flex justify-end mt-2">
-                <a
-                  href="#"
+                <Link
+                  to="/forgot-password"
+                  state={{ role: "customer" }} // 👈 Pass the role so backend knows where to look!
                   className="text-xs font-semibold text-emerald-600 hover:text-green-700"
                 >
                   Forgot Password?
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -126,7 +131,6 @@ const CustomerLogin = () => {
             >
               {loading ? "Logging in..." : "Log In"}
             </button>
-            
 
             {/* NEW LINK BELOW BUTTON */}
             <div className="text-center mt-4">

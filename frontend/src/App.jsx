@@ -11,6 +11,8 @@ import MerchantVerify from './pages/MerchantVerify';
 import CustomerDashboard from './pages/CustomerDashboard';
 import MerchantDashboard from './pages/MerchantDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -33,6 +35,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* 3. Merchant Routes (Keep commented for now) */}
         <Route path="/merchant-signup" element={<MerchantSignup />} />

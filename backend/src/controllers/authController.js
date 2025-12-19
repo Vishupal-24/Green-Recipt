@@ -15,6 +15,72 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not set. Define it in your environment before starting the server.");
 }
 
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email, role } = req.body;
+
+    // Helper to find the right collection
+    const account = await findAccountByRole(email, role); // Reuse your existing helper
+
+    if (!account) {
+      // Security: Don't reveal if user exists or not, but for dev we return 404
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // Save OTP to User
+    account.otpCodeHash = otpHash;
+    account.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    await account.save();
+
+    // Send Email
+    await sendOtpEmail(email, otp);
+
+    res.json({ message: "OTP sent to email" });
+
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 2. RESET PASSWORD (Verifies OTP + Sets New Password)
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, role, otp, newPassword } = req.body;
+
+    const account = await findAccountByRole(email, role);
+    if (!account) return res.status(404).json({ message: "Account not found" });
+
+    // Verify OTP Logic (Same as verifyOtp)
+    if (!account.otpCodeHash || !account.otpExpiresAt || account.otpExpiresAt < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired code" });
+    }
+
+    const isMatch = await bcrypt.compare(otp, account.otpCodeHash);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid code" });
+    }
+
+    account.password = newPassword;
+    
+    // Clear OTP fields so it can't be reused
+    account.otpCodeHash = undefined;
+    account.otpExpiresAt = undefined;
+    
+    await account.save();
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
