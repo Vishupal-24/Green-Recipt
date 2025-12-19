@@ -1,151 +1,118 @@
-# 🌳 GreenReceipt - Digital Receipts Platform
+docker-compose up -d
+# GreenReceipt (MERN)
 
-Eliminate paper bills with a virtual printer driver that converts physical receipts into digital ones.
+Digital receipts platform with customer and merchant portals. Backend: Node.js/Express + MongoDB. Frontend: React + Vite + Tailwind. Auth uses JWT with email OTP verification.
 
 ## Features
-
-- **Virtual Printer Driver**: Acts like a printer for existing billing software
-- **QR Code Generation**: Instant digital receipt delivery
-- **Customer Wallet**: All receipts organized in one app
-- **Merchant Dashboard**: Analytics, cost savings, customer engagement
-- **Eco Tracking**: Track paper saved and environmental impact
-- **Cloud Storage**: Secure PDF/JSON storage
+- Customer portal: view receipts, basic analytics, auth with OTP email verification.
+- Merchant portal: manage receipts, view analytics, auth with OTP email verification.
+- Protected APIs for receipts and analytics.
+- Email delivery for verification codes (nodemailer).
 
 ## Tech Stack
+- Frontend: React, Vite, Tailwind, Axios, React Router.
+- Backend: Node.js, Express, Mongoose, JWT, bcrypt, Nodemailer.
+- Database: MongoDB.
 
-- **Frontend**: HTML, Tailwind CSS, Vanilla JS
-- **Backend**: Node.js + Express
-- **Database**: PostgreSQL
-- **Storage**: Local/AWS S3
-- **QR Codes**: qrcode library
-- **PDF Generation**: PDFKit
+## Prerequisites
+- Node.js 18+
+- MongoDB instance (local or remote)
+- SMTP credentials (e.g., Gmail App Password) for sending OTP codes
 
-## Quick Start
+## Environment Variables
+Create two `.env` files: one in `backend/`, one in `frontend/`.
 
-### Using Docker (Recommended)
-
-```bash
-# Start all services
-docker-compose up -d
-
-# Access the app
-open http://localhost:3000
+### backend/.env
+```
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/greenreceipt
+JWT_SECRET=replace_with_strong_secret
+EMAIL_USER=your_smtp_user@gmail.com
+EMAIL_PASS=your_smtp_app_password
+BASE_URL=http://localhost:5000
 ```
 
-### Manual Setup
-
-1. **Install Dependencies**
-```bash
-npm install
+### frontend/.env
+```
+VITE_API_URL=http://localhost:5000/api
 ```
 
-2. **Setup Database**
-```bash
-# Create PostgreSQL database
-createdb greenreceipt
-
-# Copy environment file
-cp .env.example .env
-
-# Edit .env with your database credentials
-
-# Run migrations
-npm run db:migrate
+## Installation
+From repo root:
+```
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-3. **Start Server**
-```bash
+## Running (Development)
+Use two terminals.
+
+1) Backend
+```
+cd backend
 npm run dev
 ```
 
-4. **Start Virtual Printer (Optional)**
-```bash
-npm run printer
+2) Frontend
+```
+cd frontend
+npm run dev
 ```
 
-## API Endpoints
+Frontend dev server defaults to http://localhost:5173 and calls the API at `VITE_API_URL`.
 
-### Authentication
-- `POST /api/auth/merchant/register` - Register merchant
-- `POST /api/auth/merchant/login` - Merchant login
-- `POST /api/auth/customer/login` - Customer OTP login
+## Auth + OTP Flow
+- Signup (customer/merchant) at `/api/auth/signup/customer` or `/api/auth/signup/merchant` stores `isVerified=false`, generates a 6-digit OTP, emails it.
+- User enters the code on `/verify-customer` or `/verify-merchant` pages.
+- Verification calls `POST /api/auth/otp/verify` with `{ email, role, code }`; on success returns JWT, stored in localStorage, and redirects to the dashboard.
+- Resend code via `POST /api/auth/otp/request` with `{ email, role }`. Codes expire in 10 minutes; five attempts max.
 
-### Receipts
-- `POST /api/receipts/generate` - Generate receipt & QR
-- `GET /api/receipts/:receiptId` - Get receipt details
-- `POST /api/receipts/:receiptId/scan` - Mark as scanned
+## Key API Endpoints
+- `POST /api/auth/signup/customer` { name, email, password, confirmPassword }
+- `POST /api/auth/signup/merchant` { shopName, email, password, confirmPassword }
+- `POST /api/auth/login` { email, password, role }
+- `POST /api/auth/otp/request` { email, role }
+- `POST /api/auth/otp/verify` { email, role, code }
 
-### Merchant
-- `GET /api/merchant/dashboard` - Dashboard stats
-- `GET /api/merchant/receipts` - Recent receipts
+## Frontend Routes
+- Customer: `/customer-signup`, `/customer-login`, `/verify-customer`, `/customer-dashboard`
+- Merchant: `/merchant-signup`, `/merchant-login`, `/verify-merchant`, `/merchant-dashboard`
+- ProtectedRoute guards dashboards using JWT in localStorage.
 
-### Customer
-- `GET /api/customer/receipts` - Customer receipts
-- `GET /api/customer/profile` - Profile & eco stats
-- `GET /api/customer/shops` - Shop filter list
-
-## Virtual Printer Usage
-
-The virtual printer watches a directory for print jobs:
-
-```bash
-# Create a print job (JSON format)
-echo '{
-  "merchantToken": "your_jwt_token",
-  "shop_name": "My Store",
-  "items": [
-    {"name": "Product 1", "qty": 2, "price": 100}
-  ]
-}' > print-queue/bill-001.json
+## Project Structure (trimmed)
+```
+backend/
+  src/controllers/authController.js
+  src/routes/authRoutes.js
+  src/models/User.js
+  src/models/Merchant.js
+  src/utils/sendEmail.js
+frontend/
+  src/services/api.js
+  src/pages/CustomerSignup.jsx
+  src/pages/MerchantSignup.jsx
+  src/pages/CustomerVerify.jsx
+  src/pages/MerchantVerify.jsx
 ```
 
-The printer service will:
-1. Detect the file
-2. Send to API
-3. Generate QR code
-4. Save receipt to database
-
-## Environment Variables
-
-```env
-PORT=3000
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=greenreceipt
-DB_USER=postgres
-DB_PASSWORD=your_password
-JWT_SECRET=your_secret_key
-STORAGE_TYPE=local
+## Tailwind/Vite Notes
+If Tailwind config is missing, run inside `frontend/`:
 ```
-
-## Production Deployment
-
-1. Set up PostgreSQL database
-2. Configure AWS S3 (optional)
-3. Set environment variables
-4. Deploy using Docker or your preferred platform
-
-```bash
-docker-compose -f docker-compose.yml up -d
+npx tailwindcss init -p
 ```
+Ensure `src/index.css` imports Tailwind base/components/utilities.
 
-## Revenue Model
+## Manual Test Checklist
+1) Start backend and frontend dev servers.
+2) Sign up a customer, receive email OTP, verify, land on dashboard.
+3) Sign up a merchant, receive OTP, verify, land on dashboard.
+4) Try invalid/expired code to confirm error handling and resend.
 
-- **B2B SaaS**: ₹500-2000/month per shop
-- **B2C Ads**: Coupons/offers in receipts
-- **Premium Features**: Loyalty, analytics, GST integration
-- **CSR Partnerships**: Eco-branding with NGOs
-
-## Future Roadmap
-
-- [ ] UPI app integration (GPay, Paytm, PhonePe)
-- [ ] AI expense tracking
-- [ ] B2B analytics for FMG brands
-- [ ] Government GST integration
-- [ ] Mobile apps (React Native/Flutter)
-- [ ] Warranty & returns management
-- [ ] Loyalty program integration
+## Deployment Tips
+- Set `VITE_API_URL` to your deployed API base.
+- Use strong `JWT_SECRET` and production SMTP credentials.
+- Ensure MongoDB is reachable from your deployment environment.
 
 ## License
-
 MIT
+STORAGE_TYPE=local
