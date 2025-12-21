@@ -84,7 +84,7 @@ const MerchantSidebar = ({ activeTab, onNavigate, isOpen, onClose }) => {
           <NavItem id="profile" icon={User} label="Profile" />
         </nav>
 
-        {/* Footer / Logout (mt-auto pushes it to bottom) */}
+        {/* Footer / Logout (mt-auto pushes it to bottom)
         <div className="mt-auto pt-4 border-t border-slate-50">
           <button 
             onClick={handleLogout}
@@ -93,7 +93,7 @@ const MerchantSidebar = ({ activeTab, onNavigate, isOpen, onClose }) => {
             <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
             <span className="font-medium">Logout</span>
           </button>
-        </div>
+        </div> */}
 
       </aside>
     </>

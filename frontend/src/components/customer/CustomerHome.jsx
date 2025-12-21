@@ -2,24 +2,22 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MOCK_RECEIPTS } from './customerData';
 import ReceiptCard from './ReceiptCard';
 import { 
-  TrendingUp, Wallet, QrCode, UploadCloud, X, CheckCircle, Save,
-  Image as ImageIcon, Calendar, PieChart, Store
+  TrendingUp, Wallet, QrCode, UploadCloud, X, Save,
+  Image as ImageIcon, Calendar, PieChart, Store, CheckCircle
 } from 'lucide-react';
 
-const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTrigger prop
+const CustomerHome = ({ onNavigate, onScanTrigger }) => {
   
-  // 🟢 STATE: Load from LocalStorage OR use Default Mock Data
+  // 🟢 STATE
   const [receipts, setReceipts] = useState(() => {
     const saved = localStorage.getItem('customerReceipts');
     return saved ? JSON.parse(saved) : MOCK_RECEIPTS;
   });
 
-  // 💾 EFFECT: Auto-save whenever receipts change
   useEffect(() => {
     localStorage.setItem('customerReceipts', JSON.stringify(receipts));
   }, [receipts]);
   
-  // 🧠 DYNAMIC STATS: Only sum up receipts that are NOT excluded
   const totalSpent = receipts
     .filter(r => !r.excludeFromStats)
     .reduce((sum, r) => sum + r.amount, 0);
@@ -33,32 +31,26 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTr
 
   const fileInputRef = useRef(null);
 
-  // ——— CRUD ACTIONS (Passed to Children) ———
-
-  // 🗑️ DELETE RECEIPT
+  // ——— CRUD ACTIONS ———
   const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this receipt permanently?")) {
+    if (window.confirm("Delete this receipt?")) {
       setReceipts(prev => prev.filter(r => r.id !== id));
     }
   };
 
-  // ✏️ UPDATE RECEIPT
   const handleUpdate = (updatedReceipt) => {
     setReceipts(prev => prev.map(r => r.id === updatedReceipt.id ? updatedReceipt : r));
   };
-
-  // ❌ REMOVED LOCAL SCANNER LOGIC (Moved to Dashboard)
 
   // 📂 FILE PICKER
   const handleFilePick = (e) => {
     const file = e.target.files[0];
     if (file) {
-        // Use FileReader to store image as Base64 so it persists in LocalStorage
         const reader = new FileReader();
         reader.onloadend = () => {
             setPendingFile({ url: reader.result, name: file.name });
             setManualAmount(""); 
-            setManualMerchant(""); // Reset
+            setManualMerchant(""); 
             setManualDate(new Date().toISOString().split('T')[0]);
             setIncludeInStats(true);
         };
@@ -97,7 +89,6 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTr
         <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden transition-all">
             <div className="relative z-10">
                 <p className="text-slate-400 text-xs font-bold uppercase">Total Spent (Active)</p>
-                {/* 🟢 DYNAMIC TOTAL */}
                 <h3 className="text-3xl font-bold mt-1">₹{totalSpent}</h3>
                 <p className="text-emerald-400 text-xs mt-2 flex items-center gap-1"><TrendingUp size={12}/> {receipts.length} Receipts archived</p>
             </div>
@@ -105,7 +96,6 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTr
         </div>
         
         <div className="grid grid-cols-2 gap-3">
-            {/* 👇 UPDATED: Uses the Parent Trigger */}
             <button 
                 onClick={onScanTrigger} 
                 className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex flex-col items-center justify-center gap-2 text-emerald-700 hover:bg-emerald-100 transition-all active:scale-95"
@@ -133,13 +123,11 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTr
           <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-slate-100 -z-10 md:hidden"></div>
           {receipts.map((receipt) => (
              <div key={receipt.id} className="relative">
-                 {/* 🟢 VISUAL INDICATOR for Excluded Receipts */}
                  {receipt.excludeFromStats && (
                     <div className="absolute -left-2 top-1/2 -translate-y-1/2 -ml-6 hidden md:flex items-center justify-center w-6 h-6 z-0" title="Excluded from Analytics">
                         <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
                     </div>
                  )}
-                 {/* Pass Delete/Update Handlers */}
                  <ReceiptCard 
                     data={receipt} 
                     onDelete={() => handleDelete(receipt.id)} 
@@ -149,8 +137,6 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTr
           ))}
         </div>
       </div>
-
-      {/* ❌ REMOVED LOCAL SCANNER MODAL (It is now in Dashboard) */}
 
       {/* 📝 UPLOAD DETAILS MODAL */}
       {pendingFile && (
@@ -172,44 +158,49 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => { // 👈 ADDED onScanTr
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Merchant / Shop</label>
                             <div className="relative">
-                                <Store className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                                {/* 👇 FIXED: Centered Icon */}
+                                <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input 
                                     type="text" 
                                     placeholder="e.g. Starbucks, Uber" 
                                     value={manualMerchant}
                                     onChange={(e) => setManualMerchant(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
                                     required
                                 />
                             </div>
                         </div>
 
-                        {/* 2. Amount */}
+                        {/* 2. Amount (KEYPAD FIX) */}
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Total Amount</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-2.5 font-bold text-slate-400">₹</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
                                 <input 
                                     type="number" 
+                                    // 👇 FIXED: This forces mobile to stay in Numeric Mode
+                                    inputMode="decimal"
                                     placeholder="0.00" 
                                     value={manualAmount}
                                     onChange={(e) => setManualAmount(e.target.value)}
-                                    className="w-full pl-8 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-lg font-bold text-slate-800 outline-none focus:border-blue-500"
+                                    className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-lg font-bold text-slate-800 outline-none focus:border-blue-500"
                                     required
                                 />
                             </div>
                         </div>
 
-                        {/* 3. Date */}
+                        {/* 3. Date (ICON FIX) */}
                         <div>
                             <label className="block text-xs font-bold text-slate-400 uppercase mb-1.5 ml-1">Transaction Date</label>
                             <div className="relative">
-                                <Calendar className="absolute left-3 top-2.5 text-slate-400" size={18} />
+                                {/* 👇 FIXED: Icon perfectly centered vertically */}
+                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                                 <input 
                                     type="date" 
                                     value={manualDate}
                                     onChange={(e) => setManualDate(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-blue-500"
+                                    // 👇 FIXED: pl-10 gives space, and we hide the ugly native icon
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full"
                                     required
                                 />
                             </div>
