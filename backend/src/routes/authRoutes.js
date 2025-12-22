@@ -7,9 +7,12 @@ import {
 	requestOtp,
 	verifyEmail,
 	verifyOtp,
-	forgotPassword, // <--- Import the new function
-  	resetPassword   // <--- Import the new function
+	forgotPassword,
+  	resetPassword,
+	getProfile,
+	updateProfile,
 } from "../controllers/authController.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import {
 	loginSchema,
@@ -19,6 +22,7 @@ import {
 	otpVerifySchema,
 	forgotPasswordSchema,
 	resetPasswordSchema,
+	updateProfileSchema,
 } from "../validators/authSchemas.js";
 
 const router = express.Router();
@@ -47,5 +51,7 @@ router.post("/otp/verify", otpLimiter, validate(otpVerifySchema), verifyOtp);
 router.get("/verify/:token", verifyEmail);
 router.post('/forgot-password', otpLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', otpLimiter, validate(resetPasswordSchema), resetPassword);
+router.get('/me', protect, getProfile);
+router.patch('/me', protect, validate(updateProfileSchema), updateProfile);
 
 export default router;

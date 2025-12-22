@@ -66,3 +66,29 @@ export const resetPasswordSchema = {
 		newPassword: passwordSchema,
 	}),
 };
+
+const phoneSchema = z.string().trim().min(7).max(20).optional();
+const addressSchema = z
+	.object({
+		line1: z.string().trim().max(120).optional(),
+		line2: z.string().trim().max(120).optional(),
+		city: z.string().trim().max(80).optional(),
+		state: z.string().trim().max(80).optional(),
+		postalCode: z.string().trim().max(20).optional(),
+		country: z.string().trim().max(80).optional(),
+	})
+	.partial();
+
+export const updateProfileSchema = {
+	body: z
+		.object({
+			name: z.string().trim().min(1).max(120).optional(),
+			email: emailSchema.optional(),
+			phone: phoneSchema,
+			address: addressSchema.optional(),
+		})
+		.refine((data) => Object.keys(data).length > 0, {
+			message: "At least one field must be provided",
+			path: ["name"],
+		}),
+};

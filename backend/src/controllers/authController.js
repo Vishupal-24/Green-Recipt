@@ -265,6 +265,88 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+export const getProfile = async (req, res) => {
+  try {
+    const isMerchant = req.user.role === "merchant";
+    const Model = isMerchant ? Merchant : User;
+    const account = await Model.findById(req.user.id).lean();
+
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    const payload = isMerchant
+      ? {
+          id: account._id,
+          role: account.role,
+          shopName: account.shopName,
+          email: account.email,
+          phone: account.phone || null,
+          address: account.address || null,
+          isVerified: account.isVerified,
+        }
+      : {
+          id: account._id,
+          role: account.role,
+          name: account.name,
+          email: account.email,
+          phone: account.phone || null,
+          isVerified: account.isVerified,
+        };
+
+    res.json(payload);
+  } catch (error) {
+    console.error("getProfile error", error);
+    res.status(500).json({ message: "Failed to load profile" });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    if (req.user.role !== "customer") {
+      return res.status(403).json({ message: "Only customers can update this profile" });
+    }
+
+    const updates = {};
+    const { name, email, phone, address } = req.body;
+
+    if (name) updates.name = name;
+    if (phone) updates.phone = phone;
+    if (address) updates.address = address;
+
+    if (email) {
+      const normalized = email.trim().toLowerCase();
+      // Check uniqueness across users and merchants (excluding self)
+      const [otherUser, otherMerchant] = await Promise.all([
+        User.findOne({ email: normalized, _id: { $ne: req.user.id } }),
+        Merchant.findOne({ email: normalized }),
+      ]);
+      if (otherUser || otherMerchant) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      updates.email = normalized;
+    }
+
+    const account = await User.findByIdAndUpdate(req.user.id, updates, { new: true }).lean();
+    if (!account) {
+      return res.status(404).json({ message: "Account not found" });
+    }
+
+    res.json({
+      id: account._id,
+      role: account.role,
+      name: account.name,
+      email: account.email,
+      phone: account.phone || null,
+      address: account.address || null,
+      isVerified: account.isVerified,
+    });
+  } catch (error) {
+    console.error("updateProfile error", error);
+    res.status(500).json({ message: "Failed to update profile" });
+  }
+};
+
 export const requestOtp = async (req, res) => {
   try {
     const { email, role = "customer" } = req.body;
