@@ -280,9 +280,14 @@ export const getProfile = async (req, res) => {
           id: account._id,
           role: account.role,
           shopName: account.shopName,
+          ownerName: account.ownerName || null,
           email: account.email,
           phone: account.phone || null,
           address: account.address || null,
+          receiptFooter: account.receiptFooter || "Thank you! Visit again.",
+          currency: account.currency || "INR",
+          merchantCode: account.merchantCode || null,
+          logoUrl: account.logoUrl || null,
           isVerified: account.isVerified,
           createdAt: account.createdAt,
           updatedAt: account.updatedAt,
@@ -308,11 +313,57 @@ export const getProfile = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    if (req.user.role !== "customer") {
-      return res.status(403).json({ message: "Only customers can update this profile" });
+    const isMerchant = req.user.role === "merchant";
+    const Model = isMerchant ? Merchant : User;
+    const updates = {};
+
+    if (isMerchant) {
+      // Merchant profile updates
+      const { shopName, ownerName, email, phone, address, receiptFooter, currency } = req.body;
+
+      if (shopName) updates.shopName = shopName.trim();
+      if (ownerName !== undefined) updates.ownerName = ownerName?.trim() || null;
+      if (phone !== undefined) updates.phone = phone?.trim() || null;
+      if (address !== undefined) updates.address = address?.trim() || null;
+      if (receiptFooter !== undefined) updates.receiptFooter = receiptFooter?.trim() || "Thank you! Visit again.";
+      if (currency) updates.currency = currency.trim();
+
+      if (email) {
+        const normalized = email.trim().toLowerCase();
+        const [otherUser, otherMerchant] = await Promise.all([
+          User.findOne({ email: normalized }),
+          Merchant.findOne({ email: normalized, _id: { $ne: req.user.id } }),
+        ]);
+        if (otherUser || otherMerchant) {
+          return res.status(400).json({ message: "Email already in use" });
+        }
+        updates.email = normalized;
+      }
+
+      const account = await Merchant.findByIdAndUpdate(req.user.id, updates, { new: true }).lean();
+      if (!account) {
+        return res.status(404).json({ message: "Account not found" });
+      }
+
+      return res.json({
+        id: account._id,
+        role: account.role,
+        shopName: account.shopName,
+        ownerName: account.ownerName || null,
+        email: account.email,
+        phone: account.phone || null,
+        address: account.address || null,
+        receiptFooter: account.receiptFooter || "Thank you! Visit again.",
+        currency: account.currency || "INR",
+        merchantCode: account.merchantCode || null,
+        logoUrl: account.logoUrl || null,
+        isVerified: account.isVerified,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+      });
     }
 
-    const updates = {};
+    // Customer profile updates
     const { name, email, phone, address } = req.body;
 
     if (name) updates.name = name;
@@ -321,7 +372,6 @@ export const updateProfile = async (req, res) => {
 
     if (email) {
       const normalized = email.trim().toLowerCase();
-      // Check uniqueness across users and merchants (excluding self)
       const [otherUser, otherMerchant] = await Promise.all([
         User.findOne({ email: normalized, _id: { $ne: req.user.id } }),
         Merchant.findOne({ email: normalized }),
@@ -345,6 +395,8 @@ export const updateProfile = async (req, res) => {
       phone: account.phone || null,
       address: account.address || null,
       isVerified: account.isVerified,
+      createdAt: account.createdAt,
+      updatedAt: account.updatedAt,
     });
   } catch (error) {
     console.error("updateProfile error", error);

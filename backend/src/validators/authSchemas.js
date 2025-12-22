@@ -106,13 +106,28 @@ const addressSchema = z
 		return Object.keys(cleaned).length ? cleaned : undefined;
 	});
 
+// Profile update schema - supports both customer and merchant fields
 export const updateProfileSchema = {
 	body: z
 		.object({
+			// Customer fields
 			name: optionalString(120),
+			
+			// Merchant fields
+			shopName: optionalString(120),
+			ownerName: optionalString(120),
+			receiptFooter: optionalString(200),
+			currency: optionalString(10),
+			
+			// Shared fields
 			email: emailSchema.optional().transform((v) => (v === "" ? undefined : v)),
-			phone: phoneSchema,
-			address: addressSchema.optional(),
+			phone: z.string().trim().optional().transform((v) => (v === "" ? undefined : v)),
+			address: z.union([
+				// Customer structured address
+				addressSchema,
+				// Merchant string address
+				optionalString(500),
+			]).optional(),
 		})
 		.transform((data) => {
 			const cleaned = Object.fromEntries(
@@ -122,6 +137,6 @@ export const updateProfileSchema = {
 		})
 		.refine((data) => Object.keys(data).length > 0, {
 			message: "At least one field must be provided",
-			path: ["name"],
+			path: ["body"],
 		}),
 };

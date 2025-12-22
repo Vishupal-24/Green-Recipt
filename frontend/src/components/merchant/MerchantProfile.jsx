@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   User, 
   Store, 
@@ -12,37 +12,126 @@ import {
   Receipt,
   ShieldCheck,
   Leaf,
-  Trophy
+  Trophy,
+  RefreshCw,
+  Loader2,
+  CheckCircle,
+  AlertTriangle
 } from 'lucide-react';
+import { fetchProfile, updateProfile, fetchMerchantAnalytics, clearSession } from '../../services/api';
+
+// ============== TOAST NOTIFICATION ==============
+const Toast = ({ message, type = 'success', onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-500' : 'bg-amber-500';
+  const Icon = type === 'success' ? CheckCircle : type === 'error' ? X : AlertTriangle;
+
+  return (
+    <div className={`fixed top-4 right-4 z-50 ${bgColor} text-white px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-slide-in-right max-w-sm`}>
+      <Icon size={18} />
+      <span className="text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="ml-auto p-1 hover:bg-white/20 rounded-full">
+        <X size={14} />
+      </button>
+    </div>
+  );
+};
+
+// ============== SKELETON LOADER ==============
+const ProfileSkeleton = () => (
+  <div className="space-y-6 animate-pulse max-w-4xl mx-auto pb-10">
+    <div className="bg-slate-200 rounded-2xl h-48" />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 bg-slate-200 rounded-2xl h-80" />
+      <div className="space-y-6">
+        <div className="bg-slate-200 rounded-2xl h-64" />
+        <div className="bg-slate-200 rounded-2xl h-48" />
+      </div>
+    </div>
+  </div>
+);
 
 const MerchantProfile = () => {
-  // 🟢 STATE: Load from LocalStorage OR use Default Mock Data
-  const [profile, setProfile] = useState(() => {
-    const savedProfile = localStorage.getItem('merchantProfile');
-    return savedProfile ? JSON.parse(savedProfile) : {
-      shopName: "College Canteen",
-      ownerName: "Rajesh Kumar",
-      phone: "+91 98765 43210",
-      email: "rajesh.canteen@gmail.com",
-      address: "Block A, City Engineering College, Ludhiana",
-      receiptFooter: "Thank you! Visit again.",
-      merchantId: "GR-8829-XJ",
-      joinedDate: "Aug 15, 2024",
-      currency: "INR (₹)"
-    };
-  });
+  // Core state
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [toast, setToast] = useState(null);
 
+  // Edit state
   const [isEditing, setIsEditing] = useState(false);
-  const [tempProfile, setTempProfile] = useState({ ...profile });
+  const [tempProfile, setTempProfile] = useState({});
 
-  // 💾 EFFECT: Auto-save to LocalStorage whenever profile changes
+  // Stats
+  const [stats, setStats] = useState({ totalReceipts: 0, paperSaved: 0 });
+
+  // ============== LOAD PROFILE ==============
+  const loadProfile = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    
+    try {
+      const [profileRes, analyticsRes] = await Promise.allSettled([
+        fetchProfile(),
+        fetchMerchantAnalytics(),
+      ]);
+
+      if (profileRes.status === 'fulfilled') {
+        const data = profileRes.value.data;
+        setProfile(data);
+        setTempProfile({
+          shopName: data.shopName || '',
+          ownerName: data.ownerName || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          address: data.address || '',
+          receiptFooter: data.receiptFooter || 'Thank you! Visit again.',
+        });
+      }
+
+      if (analyticsRes.status === 'fulfilled') {
+        const analytics = analyticsRes.value.data;
+        const totalReceipts = analytics.summary?.thisYear?.count || analytics.summary?.thisMonth?.count || 0;
+        // Estimate paper saved: ~2.5g per receipt
+        const paperSaved = ((totalReceipts * 2.5) / 1000).toFixed(1);
+        setStats({ totalReceipts, paperSaved });
+      }
+    } catch (e) {
+      setToast({ message: 'Unable to load profile', type: 'error' });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
   useEffect(() => {
-    localStorage.setItem('merchantProfile', JSON.stringify(profile));
-  }, [profile]);
+    loadProfile();
+  }, [loadProfile]);
 
-  // ⚡ HANDLERS
+  // ============== DERIVED DATA ==============
+  const memberSince = useMemo(() => {
+    if (!profile?.createdAt) return null;
+    return new Date(profile.createdAt).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  }, [profile?.createdAt]);
+
+  // ============== HANDLERS ==============
   const handleEdit = () => {
-    setTempProfile({ ...profile }); 
+    setTempProfile({
+      shopName: profile.shopName || '',
+      ownerName: profile.ownerName || '',
+      phone: profile.phone || '',
+      email: profile.email || '',
+      address: profile.address || '',
+      receiptFooter: profile.receiptFooter || 'Thank you! Visit again.',
+    });
     setIsEditing(true);
   };
 
@@ -50,23 +139,53 @@ const MerchantProfile = () => {
     setIsEditing(false);
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    setProfile({ ...tempProfile }); 
-    setIsEditing(false);
+    
+    if (!tempProfile.shopName?.trim()) {
+      setToast({ message: 'Shop name is required', type: 'error' });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { data } = await updateProfile({
+        shopName: tempProfile.shopName,
+        ownerName: tempProfile.ownerName,
+        phone: tempProfile.phone,
+        email: tempProfile.email,
+        address: tempProfile.address,
+        receiptFooter: tempProfile.receiptFooter,
+      });
+      
+      setProfile(data);
+      setIsEditing(false);
+      setToast({ message: 'Profile updated successfully!', type: 'success' });
+    } catch (e) {
+      setToast({ message: e.response?.data?.message || 'Failed to save', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleLogout = () => {
     if(window.confirm("Are you sure you want to logout?")) {
-        localStorage.removeItem('token'); 
-        localStorage.removeItem('role');
-        window.location.href = '/merchant-login';
+      clearSession();
+      window.location.href = '/merchant-login';
     }
   };
+
+  const handleRefresh = () => loadProfile(true);
+
+  // ============== RENDER ==============
+  if (loading) return <ProfileSkeleton />;
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto pb-10">
       
+      {/* Toast */}
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+
       {/* 1️⃣ BUSINESS IDENTITY HEADER */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-500 rounded-2xl p-6 md:p-8 text-white shadow-lg relative overflow-hidden">
         {/* Background Decor */}
@@ -75,21 +194,39 @@ const MerchantProfile = () => {
         <div className="flex flex-col md:flex-row items-center md:items-start gap-6 relative z-10">
             {/* Avatar / Logo Placeholder */}
             <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md border-4 border-white/20 text-emerald-600 font-bold text-3xl shrink-0 uppercase">
-                {profile.shopName.charAt(0)}
+                {(profile?.shopName || 'S').charAt(0)}
             </div>
             
             <div className="text-center md:text-left flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold">{profile.shopName}</h1>
+                <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <h1 className="text-2xl md:text-3xl font-bold">{profile?.shopName || 'Your Shop'}</h1>
+                    <button 
+                      onClick={handleRefresh}
+                      disabled={refreshing}
+                      className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+                    >
+                      <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+                    </button>
+                </div>
                 <p className="text-emerald-100 font-medium mt-1 flex items-center justify-center md:justify-start gap-2">
                     <Store size={16} /> Food & Beverage • Merchant
                 </p>
                 <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-3">
-                    <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold backdrop-blur-sm border border-white/10">
-                        {profile.merchantId}
-                    </span>
-                    <span className="px-3 py-1 bg-emerald-800/30 rounded-full text-xs font-bold backdrop-blur-sm border border-white/10 flex items-center gap-1">
-                        <ShieldCheck size={12} /> Verified
-                    </span>
+                    {profile?.merchantCode && (
+                      <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold backdrop-blur-sm border border-white/10">
+                          {profile.merchantCode}
+                      </span>
+                    )}
+                    {profile?.isVerified && (
+                      <span className="px-3 py-1 bg-emerald-800/30 rounded-full text-xs font-bold backdrop-blur-sm border border-white/10 flex items-center gap-1">
+                          <ShieldCheck size={12} /> Verified
+                      </span>
+                    )}
+                    {memberSince && (
+                      <span className="px-3 py-1 bg-white/10 rounded-full text-xs backdrop-blur-sm border border-white/10">
+                          Since {memberSince}
+                      </span>
+                    )}
                 </div>
             </div>
         </div>
@@ -115,15 +252,18 @@ const MerchantProfile = () => {
                     <div className="flex gap-2">
                         <button 
                             onClick={handleCancel}
-                            className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors"
+                            disabled={saving}
+                            className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <X size={20} />
                         </button>
                         <button 
                             onClick={handleSave}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all"
+                            disabled={saving}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
                         >
-                            <Save size={14} /> Save
+                            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} 
+                            {saving ? 'Saving...' : 'Save'}
                         </button>
                     </div>
                 )}
@@ -141,7 +281,7 @@ const MerchantProfile = () => {
                             <input 
                                 disabled={!isEditing}
                                 type="text" 
-                                value={isEditing ? tempProfile.shopName : profile.shopName}
+                                value={isEditing ? tempProfile.shopName : (profile?.shopName || '')}
                                 onChange={(e) => setTempProfile({...tempProfile, shopName: e.target.value})}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none font-medium transition-all ${isEditing ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                             />
@@ -156,7 +296,7 @@ const MerchantProfile = () => {
                             <input 
                                 disabled={!isEditing}
                                 type="text" 
-                                value={isEditing ? tempProfile.ownerName : profile.ownerName}
+                                value={isEditing ? tempProfile.ownerName : (profile?.ownerName || '')}
                                 onChange={(e) => setTempProfile({...tempProfile, ownerName: e.target.value})}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none font-medium transition-all ${isEditing ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                             />
@@ -171,7 +311,7 @@ const MerchantProfile = () => {
                             <input 
                                 disabled={!isEditing}
                                 type="text" 
-                                value={isEditing ? tempProfile.phone : profile.phone}
+                                value={isEditing ? tempProfile.phone : (profile?.phone || '')}
                                 onChange={(e) => setTempProfile({...tempProfile, phone: e.target.value})}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none font-medium transition-all ${isEditing ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                             />
@@ -186,7 +326,7 @@ const MerchantProfile = () => {
                             <input 
                                 disabled={!isEditing}
                                 type="email" 
-                                value={isEditing ? tempProfile.email : profile.email}
+                                value={isEditing ? tempProfile.email : (profile?.email || '')}
                                 onChange={(e) => setTempProfile({...tempProfile, email: e.target.value})}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none font-medium transition-all ${isEditing ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                             />
@@ -201,7 +341,7 @@ const MerchantProfile = () => {
                             <textarea 
                                 disabled={!isEditing}
                                 rows="2"
-                                value={isEditing ? tempProfile.address : profile.address}
+                                value={isEditing ? tempProfile.address : (profile?.address || '')}
                                 onChange={(e) => setTempProfile({...tempProfile, address: e.target.value})}
                                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl border outline-none font-medium transition-all resize-none ${isEditing ? 'bg-white border-emerald-500 ring-1 ring-emerald-500' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
                             />
@@ -227,7 +367,7 @@ const MerchantProfile = () => {
                         <input 
                              disabled={!isEditing}
                              type="text"
-                             value={isEditing ? tempProfile.receiptFooter : profile.receiptFooter}
+                             value={isEditing ? tempProfile.receiptFooter : (profile?.receiptFooter || '')}
                              onChange={(e) => setTempProfile({...tempProfile, receiptFooter: e.target.value})}
                              placeholder="e.g. Thank you, visit again!"
                              className={`w-full px-4 py-2 text-sm rounded-lg border outline-none transition-all ${isEditing ? 'border-emerald-500' : 'bg-slate-50 border-slate-200'}`}
@@ -239,21 +379,21 @@ const MerchantProfile = () => {
                         <p className="text-[10px] text-slate-400 font-bold uppercase text-center mb-2">Live Customer Preview</p>
                         <div className="bg-white p-4 shadow-sm border border-slate-200 mx-auto max-w-[200px] text-center font-mono text-[10px] leading-tight relative">
                             <div className="absolute -top-1 left-0 w-full h-2 bg-[radial-gradient(circle,transparent_50%,#fff_50%)] bg-[length:8px_8px] rotate-180"></div>
-                            <div className="font-bold text-xs mb-1 text-slate-800">{isEditing ? tempProfile.shopName : profile.shopName}</div>
-                            <div className="text-slate-400 text-[8px] mb-3">{isEditing ? tempProfile.address : profile.address}</div>
+                            <div className="font-bold text-xs mb-1 text-slate-800">{isEditing ? tempProfile.shopName : (profile?.shopName || 'Your Shop')}</div>
+                            <div className="text-slate-400 text-[8px] mb-3">{isEditing ? tempProfile.address : (profile?.address || 'Your Address')}</div>
                             <div className="border-b border-dashed border-slate-300 my-2"></div>
                             <div className="flex justify-between my-1"><span>Masala Chai</span><span>15.00</span></div>
                             <div className="flex justify-between my-1"><span>Sandwich</span><span>45.00</span></div>
                             <div className="border-b border-dashed border-slate-300 my-2"></div>
                             <div className="flex justify-between font-bold text-slate-800"><span>TOTAL</span><span>₹60.00</span></div>
-                            <div className="mt-4 text-slate-500 italic">"{isEditing ? tempProfile.receiptFooter : profile.receiptFooter}"</div>
+                            <div className="mt-4 text-slate-500 italic">"{isEditing ? tempProfile.receiptFooter : (profile?.receiptFooter || 'Thank you!')}"</div>
                             <div className="absolute -bottom-1 left-0 w-full h-2 bg-[radial-gradient(circle,transparent_50%,#fff_50%)] bg-[length:8px_8px]"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* 4️⃣ 🌱 IMPACT CARD (NEW! Replaces Account Info) */}
+            {/* 4️⃣ 🌱 IMPACT CARD (Real Stats) */}
             <div className="bg-emerald-50 rounded-2xl border border-emerald-100 p-6 relative overflow-hidden">
                 <div className="relative z-10">
                     <h3 className="font-bold text-emerald-900 mb-1 flex items-center gap-2">
@@ -263,19 +403,21 @@ const MerchantProfile = () => {
                     
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-white/60 p-3 rounded-xl border border-emerald-100/50">
-                            <p className="text-2xl font-bold text-emerald-800">12.5 <span className="text-xs font-normal text-emerald-600">kg</span></p>
+                            <p className="text-2xl font-bold text-emerald-800">{stats.paperSaved} <span className="text-xs font-normal text-emerald-600">kg</span></p>
                             <p className="text-[10px] font-bold text-emerald-500 uppercase">Paper Saved</p>
                         </div>
                         <div className="bg-white/60 p-3 rounded-xl border border-emerald-100/50">
-                            <p className="text-2xl font-bold text-emerald-800">1.4k</p>
+                            <p className="text-2xl font-bold text-emerald-800">{stats.totalReceipts.toLocaleString()}</p>
                             <p className="text-[10px] font-bold text-emerald-500 uppercase">Digital Bills</p>
                         </div>
                     </div>
 
-                    <div className="mt-4 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-100/50 p-2 rounded-lg">
-                        <Trophy size={14} className="text-amber-500" />
-                        <span>You are in the top <strong>5%</strong> of eco-friendly shops in your city!</span>
-                    </div>
+                    {stats.totalReceipts > 100 && (
+                      <div className="mt-4 flex items-center gap-2 text-xs text-emerald-700 bg-emerald-100/50 p-2 rounded-lg">
+                          <Trophy size={14} className="text-amber-500" />
+                          <span>Great job! You've issued over <strong>{stats.totalReceipts}</strong> digital receipts!</span>
+                      </div>
+                    )}
                 </div>
                 {/* Background Decor */}
                 <Leaf className="absolute -right-6 -bottom-6 text-emerald-200/50 rotate-[-15deg]" size={140} />
