@@ -1,92 +1,569 @@
-import React from 'react';
-import { TrendingUp, Clock, CalendarX, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { 
+  TrendingUp, TrendingDown, Clock, CalendarX, ArrowUpRight, ArrowDownRight,
+  RefreshCw, AlertTriangle, BarChart3, PieChart, Users, Receipt, Sparkles,
+  CreditCard, Banknote, Smartphone, Wallet, Calendar, Package, Activity,
+  Award, Target, Zap, IndianRupee, ShoppingBag
+} from 'lucide-react';
+import { fetchMerchantAnalytics } from '../../services/api';
 
-const MerchantInsights = () => {
-  // Mock Data for Visuals
-  const topItems = [
-    { name: "Masala Chai", count: 142, percentage: 85, color: "bg-emerald-500" },
-    { name: "Veg Puff", count: 98, percentage: 65, color: "bg-blue-500" },
-    { name: "Cold Coffee", count: 54, percentage: 40, color: "bg-orange-500" },
-    { name: "Maggi", count: 32, percentage: 25, color: "bg-purple-500" },
-  ];
+// ============== SKELETON LOADER ==============
+const InsightsSkeleton = () => (
+  <div className="space-y-6 animate-pulse max-w-5xl mx-auto">
+    <div className="h-8 bg-slate-200 rounded w-48" />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="h-40 bg-slate-200 rounded-2xl" />
+      <div className="h-40 bg-slate-200 rounded-2xl" />
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-slate-200 rounded-2xl" />)}
+    </div>
+    <div className="h-64 bg-slate-200 rounded-2xl" />
+    <div className="h-48 bg-slate-200 rounded-2xl" />
+  </div>
+);
+
+// ============== MINI BAR CHART ==============
+const MiniBarChart = ({ data, height = 60, color = 'emerald' }) => {
+  if (!data || data.length === 0) return null;
+  const max = Math.max(...data.map(d => d.value), 1);
+  const colorClass = {
+    emerald: 'bg-emerald-500',
+    blue: 'bg-blue-500',
+    purple: 'bg-purple-500',
+    orange: 'bg-orange-500',
+  }[color] || 'bg-emerald-500';
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
+    <div className="flex items-end gap-1" style={{ height }}>
+      {data.map((d, i) => (
+        <div
+          key={i}
+          className={`flex-1 ${colorClass} rounded-t opacity-80 hover:opacity-100 transition-opacity cursor-pointer relative group`}
+          style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
+        >
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+            {d.label}: ₹{d.value.toLocaleString('en-IN')}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ============== STAT CARD ==============
+const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color = 'emerald' }) => {
+  const colorClasses = {
+    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    blue: 'bg-blue-50 text-blue-600 border-blue-100',
+    purple: 'bg-purple-50 text-purple-600 border-purple-100',
+    orange: 'bg-orange-50 text-orange-600 border-orange-100',
+    slate: 'bg-slate-50 text-slate-600 border-slate-100',
+  };
+  const iconBg = colorClasses[color] || colorClasses.emerald;
+
+  return (
+    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex items-start justify-between">
+        <div className={`p-2 rounded-xl ${iconBg}`}>
+          <Icon size={18} />
+        </div>
+        {trend && (
+          <div className={`flex items-center gap-0.5 text-xs font-bold ${trend === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>
+            {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+            {trendValue}%
+          </div>
+        )}
+      </div>
+      <div className="mt-3">
+        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
+        {subValue && <p className="text-xs text-slate-400 mt-0.5">{subValue}</p>}
+      </div>
+    </div>
+  );
+};
+
+// ============== PAYMENT ICON ==============
+const getPaymentIcon = (method) => {
+  const m = (method || '').toLowerCase();
+  if (m.includes('upi')) return Smartphone;
+  if (m.includes('card')) return CreditCard;
+  if (m.includes('cash')) return Banknote;
+  return Wallet;
+};
+
+// ============== MAIN COMPONENT ==============
+const MerchantInsights = () => {
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview'); // overview, items, trends
+
+  // ============== LOAD DATA ==============
+  const loadAnalytics = useCallback(async (showRefresh = false) => {
+    if (showRefresh) setRefreshing(true);
+    try {
+      const { data } = await fetchMerchantAnalytics();
+      setAnalytics(data);
+      setError(null);
+    } catch (e) {
+      setError('Unable to load insights. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
+
+  // ============== DERIVED DATA ==============
+  const chartData = useMemo(() => {
+    if (!analytics?.dailySales) return [];
+    return analytics.dailySales.slice(-14).map(d => ({
+      label: new Date(d.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }),
+      value: d.total,
+    }));
+  }, [analytics]);
+
+  const monthlyChartData = useMemo(() => {
+    if (!analytics?.monthlyTrend) return [];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return analytics.monthlyTrend.map(m => ({
+      label: monthNames[m.month - 1],
+      value: m.total,
+    }));
+  }, [analytics]);
+
+  const suggestions = useMemo(() => {
+    if (!analytics) return [];
+    const list = [];
+    const { insights, topItems, summary } = analytics;
+
+    // Peak time suggestion
+    if (insights?.peakHour) {
+      list.push({
+        icon: Clock,
+        title: 'Optimize Peak Hours',
+        desc: `Your busiest time is ${insights.peakHour.formatted}. Ensure adequate staffing and stock during this period.`,
+        type: 'info',
+      });
+    }
+
+    // Slow day suggestion
+    if (insights?.slowestDay?.name) {
+      list.push({
+        icon: CalendarX,
+        title: `Boost ${insights.slowestDay.name} Sales`,
+        desc: `${insights.slowestDay.name} is your slowest day. Consider running a special offer like "${insights.slowestDay.name} Deals" to attract more customers.`,
+        type: 'tip',
+      });
+    }
+
+    // Top item combo suggestion
+    if (topItems?.length >= 2) {
+      list.push({
+        icon: Package,
+        title: 'Create Combo Offer',
+        desc: `${topItems[0]?.name} is your bestseller. Try pairing it with ${topItems[1]?.name} for a combo deal to boost sales.`,
+        type: 'success',
+      });
+    }
+
+    // Growth suggestion
+    if (summary?.changes?.monthOverMonth > 10) {
+      list.push({
+        icon: TrendingUp,
+        title: 'Great Growth!',
+        desc: `Sales are up ${summary.changes.monthOverMonth}% from last month. Keep up the momentum!`,
+        type: 'success',
+      });
+    } else if (summary?.changes?.monthOverMonth < -10) {
+      list.push({
+        icon: TrendingDown,
+        title: 'Sales Dip Alert',
+        desc: `Sales are down ${Math.abs(summary.changes.monthOverMonth)}% from last month. Consider promotional offers to recover.`,
+        type: 'warning',
+      });
+    }
+
+    return list.slice(0, 4);
+  }, [analytics]);
+
+  // ============== RENDER ==============
+  if (loading) return <InsightsSkeleton />;
+
+  const { summary, insights, topItems, paymentMethods, topCustomers, recentActivity } = analytics || {};
+
+  return (
+    <div className="space-y-6 animate-fade-in max-w-5xl mx-auto pb-10">
       
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800">Sales Insights</h2>
-        <p className="text-slate-500 text-sm">Understand what is selling and when.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800">Sales Insights</h2>
+          <p className="text-slate-500 text-sm">Understand what's selling and when.</p>
+        </div>
+        <button 
+          onClick={() => loadAnalytics(true)}
+          disabled={refreshing}
+          className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw size={18} className={`text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
-      {/* Top Section: Highlight Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Peak Time Card */}
-        <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
-            <div className="relative z-10">
+      {error && (
+        <div className="flex items-center gap-2 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+          <AlertTriangle size={18} /> {error}
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+        {[
+          { id: 'overview', label: 'Overview', icon: BarChart3 },
+          { id: 'items', label: 'Top Items', icon: Package },
+          { id: 'trends', label: 'Trends', icon: Activity },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === tab.id 
+                ? 'bg-white text-emerald-600 shadow-sm' 
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <tab.icon size={16} />
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* OVERVIEW TAB */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Insight Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Peak Time Card */}
+            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+              <div className="relative z-10">
                 <div className="flex items-center gap-2 text-emerald-800 font-bold mb-1">
-                    <Clock size={18} /> Peak Sales Time
+                  <Clock size={18} /> Peak Sales Time
                 </div>
-                <p className="text-4xl font-bold text-emerald-600 mt-2">1:00 PM</p>
-                <p className="text-xs text-emerald-700 mt-2 font-medium">Lunch rush is your busiest hour.</p>
-            </div>
-            {/* Decorative Background Icon */}
-            <Clock className="absolute -right-4 -bottom-4 text-emerald-200 opacity-50" size={120} />
-        </div>
-
-        {/* Lowest Day Card */}
-        <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 relative overflow-hidden">
-            <div className="relative z-10">
-                <div className="flex items-center gap-2 text-orange-800 font-bold mb-1">
-                    <CalendarX size={18} /> Slowest Day
-                </div>
-                <p className="text-4xl font-bold text-orange-600 mt-2">Tuesday</p>
-                <p className="text-xs text-orange-700 mt-2 font-medium">Consider running a "Tasty Tuesday" offer.</p>
-            </div>
-            <CalendarX className="absolute -right-4 -bottom-4 text-orange-200 opacity-50" size={120} />
-        </div>
-      </div>
-
-      {/* Bottom Section: Top Items List */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex justify-between items-center mb-8">
-              <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                <TrendingUp size={20} className="text-emerald-600"/> Top Selling Items (This Week)
-              </h3>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">Weekly Report</span>
-          </div>
-
-          <div className="space-y-6">
-              {topItems.map((item, idx) => (
-                  <div key={idx}>
-                      <div className="flex justify-between text-sm font-bold text-slate-700 mb-2">
-                          <span>{item.name}</span>
-                          <span className="text-slate-400">{item.count} sold</span>
-                      </div>
-                      <div className="h-4 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 relative group">
-                          {/* Animated Progress Bar */}
-                          <div 
-                            className={`h-full ${item.color} rounded-full transition-all duration-1000 ease-out group-hover:opacity-90`} 
-                            style={{width: `${item.percentage}%`}}
-                          ></div>
-                      </div>
-                  </div>
-              ))}
-          </div>
-          
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-start gap-3">
-            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-                <ArrowUpRight size={20} />
-            </div>
-            <div>
-                <p className="text-sm font-bold text-slate-700">Suggestion</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                    <strong>Masala Chai</strong> is your clear winner. Try creating a <em>"Chai + Puff Combo"</em> to increase sales of Veg Puff alongside it!
+                <p className="text-4xl font-bold text-emerald-600 mt-2">
+                  {insights?.peakHour?.formatted || '12:00 PM'}
                 </p>
+                <p className="text-xs text-emerald-700 mt-2 font-medium">
+                  {insights?.peakHour?.salesCount || 0} sales • ₹{(insights?.peakHour?.totalRevenue || 0).toLocaleString('en-IN')} revenue
+                </p>
+              </div>
+              <Clock className="absolute -right-4 -bottom-4 text-emerald-200 opacity-50" size={120} />
+            </div>
+
+            {/* Slowest Day Card */}
+            <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 relative overflow-hidden">
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 text-orange-800 font-bold mb-1">
+                  <CalendarX size={18} /> Slowest Day
+                </div>
+                <p className="text-4xl font-bold text-orange-600 mt-2">
+                  {insights?.slowestDay?.name || 'N/A'}
+                </p>
+                <p className="text-xs text-orange-700 mt-2 font-medium">
+                  {insights?.slowestDay?.salesCount || 0} sales • Consider running a special offer!
+                </p>
+              </div>
+              <CalendarX className="absolute -right-4 -bottom-4 text-orange-200 opacity-50" size={120} />
             </div>
           </div>
-      </div>
 
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              icon={IndianRupee}
+              label="This Month"
+              value={`₹${(summary?.thisMonth?.total || 0).toLocaleString('en-IN')}`}
+              subValue={`${summary?.thisMonth?.count || 0} receipts`}
+              trend={summary?.changes?.monthOverMonth >= 0 ? 'up' : 'down'}
+              trendValue={Math.abs(summary?.changes?.monthOverMonth || 0)}
+              color="emerald"
+            />
+            <StatCard
+              icon={Calendar}
+              label="This Week"
+              value={`₹${(summary?.thisWeek?.total || 0).toLocaleString('en-IN')}`}
+              subValue={`${summary?.thisWeek?.count || 0} receipts`}
+              trend={summary?.changes?.weekOverWeek >= 0 ? 'up' : 'down'}
+              trendValue={Math.abs(summary?.changes?.weekOverWeek || 0)}
+              color="blue"
+            />
+            <StatCard
+              icon={Receipt}
+              label="All Time"
+              value={(summary?.totalReceiptsAllTime || 0).toLocaleString()}
+              subValue="Total receipts"
+              color="purple"
+            />
+            <StatCard
+              icon={TrendingUp}
+              label="Avg/Day"
+              value={`₹${(summary?.thisMonth?.avgPerDay || 0).toLocaleString('en-IN')}`}
+              subValue="This month"
+              color="orange"
+            />
+          </div>
+
+          {/* Daily Sales Chart */}
+          {chartData.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-700">Daily Sales</h3>
+                <span className="text-xs text-slate-400">Last 14 days</span>
+              </div>
+              <MiniBarChart data={chartData} height={100} color="emerald" />
+              <div className="flex justify-between mt-2 text-[10px] text-slate-400 overflow-hidden">
+                {chartData.filter((_, i) => i % 2 === 0).map((d, i) => (
+                  <span key={i}>{d.label}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Payment Methods */}
+          {paymentMethods?.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <h3 className="font-bold text-slate-700 mb-4">Payment Methods</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {paymentMethods.map((pm, i) => {
+                  const Icon = getPaymentIcon(pm.method);
+                  return (
+                    <div key={i} className="p-4 bg-slate-50 rounded-xl flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <Icon size={20} className="text-slate-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-700 text-sm capitalize">{pm.method}</p>
+                        <p className="text-xs text-slate-400">{pm.count} txns • {pm.percentage}%</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ITEMS TAB */}
+      {activeTab === 'items' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Top Items */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                <TrendingUp size={20} className="text-emerald-600"/> Top Selling Items
+              </h3>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">This Month</span>
+            </div>
+
+            <div className="space-y-4">
+              {(topItems || []).length === 0 && (
+                <p className="text-sm text-slate-500 text-center py-6">No sales data yet</p>
+              )}
+              {(topItems || []).map((item, idx) => {
+                const colors = ['bg-emerald-500', 'bg-blue-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500'];
+                return (
+                  <div key={idx}>
+                    <div className="flex justify-between text-sm mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-slate-700">{item.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-slate-800">{item.quantity} sold</span>
+                        <span className="text-slate-400 text-xs ml-2">• ₹{item.totalRevenue.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                    <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-1000`} 
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1">Avg price: ₹{item.avgPrice}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Top Customers */}
+          {topCustomers?.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                  <Users size={18} className="text-blue-500" /> Top Customers
+                </h3>
+                <Award size={18} className="text-amber-500" />
+              </div>
+              <div className="space-y-3">
+                {topCustomers.map((customer, i) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-sm font-bold text-slate-600">
+                        {(customer.name || 'A')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-700 text-sm">{customer.name}</p>
+                        <p className="text-xs text-slate-400">{customer.visits} visits</p>
+                      </div>
+                    </div>
+                    <p className="font-bold text-slate-800">₹{customer.totalSpent.toLocaleString('en-IN')}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TRENDS TAB */}
+      {activeTab === 'trends' && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Monthly Trend */}
+          {monthlyChartData.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-slate-700">Monthly Trend</h3>
+                <span className="text-xs text-slate-400">Last 6 months</span>
+              </div>
+              <MiniBarChart data={monthlyChartData} height={120} color="blue" />
+              <div className="flex justify-between mt-2 text-xs text-slate-400">
+                {monthlyChartData.map((d, i) => (
+                  <span key={i}>{d.label}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Week Comparison */}
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard
+              icon={Calendar}
+              label="This Week"
+              value={`₹${(summary?.thisWeek?.total || 0).toLocaleString('en-IN')}`}
+              subValue={`${summary?.thisWeek?.count || 0} receipts`}
+              trend={summary?.changes?.weekOverWeek >= 0 ? 'up' : 'down'}
+              trendValue={Math.abs(summary?.changes?.weekOverWeek || 0)}
+              color="emerald"
+            />
+            <StatCard
+              icon={Clock}
+              label="Last Week"
+              value={`₹${(summary?.lastWeek?.total || 0).toLocaleString('en-IN')}`}
+              subValue={`${summary?.lastWeek?.count || 0} receipts`}
+              color="slate"
+            />
+          </div>
+
+          {/* Month Comparison */}
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard
+              icon={TrendingUp}
+              label="This Month"
+              value={`₹${(summary?.thisMonth?.total || 0).toLocaleString('en-IN')}`}
+              subValue={`${summary?.thisMonth?.count || 0} receipts`}
+              trend={summary?.changes?.monthOverMonth >= 0 ? 'up' : 'down'}
+              trendValue={Math.abs(summary?.changes?.monthOverMonth || 0)}
+              color="blue"
+            />
+            <StatCard
+              icon={Calendar}
+              label="Last Month"
+              value={`₹${(summary?.lastMonth?.total || 0).toLocaleString('en-IN')}`}
+              subValue={`${summary?.lastMonth?.count || 0} receipts`}
+              color="slate"
+            />
+          </div>
+
+          {/* Recent Activity */}
+          {recentActivity?.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+              <h3 className="font-bold text-slate-700 mb-4">Recent Activity</h3>
+              <div className="space-y-3">
+                {recentActivity.map((activity, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                      <Receipt size={18} className="text-slate-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-slate-700 text-sm truncate">{activity.customer}</p>
+                      <p className="text-xs text-slate-400">
+                        {new Date(activity.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        {' • '}{activity.itemCount} items • {activity.paymentMethod}
+                      </p>
+                    </div>
+                    <p className="font-bold text-slate-700">₹{activity.amount.toLocaleString('en-IN')}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Smart Suggestions */}
+      {suggestions.length > 0 && (
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6 rounded-2xl border border-slate-200">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="text-amber-500" size={20} />
+            <h3 className="font-bold text-slate-700">Smart Suggestions</h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {suggestions.map((tip, i) => {
+              const Icon = tip.icon;
+              const bgColor = tip.type === 'warning' ? 'bg-amber-50 border-amber-100' 
+                           : tip.type === 'success' ? 'bg-emerald-50 border-emerald-100'
+                           : 'bg-white border-slate-100';
+              const iconColor = tip.type === 'warning' ? 'text-amber-600' 
+                             : tip.type === 'success' ? 'text-emerald-600'
+                             : 'text-blue-600';
+              return (
+                <div key={i} className={`p-4 rounded-xl border ${bgColor} flex gap-3 items-start`}>
+                  <div className={`p-2 rounded-lg bg-white shadow-sm ${iconColor}`}>
+                    <Icon size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-800 text-sm">{tip.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{tip.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <p className="text-center text-xs text-slate-400 pt-4">
+        Data refreshed {analytics?.meta?.generatedAt ? new Date(analytics.meta.generatedAt).toLocaleTimeString('en-IN') : 'recently'}
+      </p>
+
+      {/* CSS */}
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+      `}</style>
     </div>
   );
 };
