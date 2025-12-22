@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
+import api from '../services/api';
 
 // Import Components
 import MerchantSidebar from '../components/merchant/MerchantSidebar'; 
@@ -14,6 +15,9 @@ const MerchantDashboard = () => {
   // 🧭 State
   const [activeTab, setActiveTab] = useState('overview');
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  
+  // 🏷️ Categories from merchant profile
+  const [categories, setCategories] = useState(["Drinks", "Snacks", "Food", "Other"]);
 
   // 📦 Shared Inventory State
   const [inventory, setInventory] = useState(() => {
@@ -26,6 +30,21 @@ const MerchantDashboard = () => {
         { id: 5, name: "Water Bottle", price: 20, category: "Drinks" },
     ];
   });
+
+  // Load categories from merchant profile
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data } = await api.get('/auth/me');
+        if (data.categories && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      } catch (err) {
+        console.error('Failed to load categories:', err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('merchantInventory', JSON.stringify(inventory));
@@ -63,7 +82,7 @@ const MerchantDashboard = () => {
                 {activeTab === 'overview' && <MerchantOverview onNavigate={setActiveTab} />}
                 {activeTab === 'calendar' && <MerchantCalendar />}
                 {activeTab === 'billing' && <MerchantBilling inventory={inventory} />}
-                {activeTab === 'items' && <MerchantItems inventory={inventory} setInventory={setInventory} />}
+                {activeTab === 'items' && <MerchantItems inventory={inventory} setInventory={setInventory} categories={categories} setCategories={setCategories} />}
                 {activeTab === 'insights' && <MerchantInsights />}
                 {activeTab === 'profile' && <MerchantProfile />}
             </div>

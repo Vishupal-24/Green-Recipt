@@ -52,6 +52,10 @@ const merchantSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 		},
+		categories: {
+			type: [String],
+			default: ["Drinks", "Snacks", "Food", "Other"],
+		},
 		role: {
 			type: String,
 			enum: ["merchant"],

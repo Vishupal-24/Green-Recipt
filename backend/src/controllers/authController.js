@@ -288,6 +288,7 @@ export const getProfile = async (req, res) => {
           currency: account.currency || "INR",
           merchantCode: account.merchantCode || null,
           logoUrl: account.logoUrl || null,
+          categories: account.categories || ["Drinks", "Snacks", "Food", "Other"],
           isVerified: account.isVerified,
           createdAt: account.createdAt,
           updatedAt: account.updatedAt,
@@ -319,7 +320,7 @@ export const updateProfile = async (req, res) => {
 
     if (isMerchant) {
       // Merchant profile updates
-      const { shopName, ownerName, email, phone, address, receiptFooter, currency } = req.body;
+      const { shopName, ownerName, email, phone, address, receiptFooter, currency, categories } = req.body;
 
       if (shopName) updates.shopName = shopName.trim();
       if (ownerName !== undefined) updates.ownerName = ownerName?.trim() || null;
@@ -327,6 +328,7 @@ export const updateProfile = async (req, res) => {
       if (address !== undefined) updates.address = address?.trim() || null;
       if (receiptFooter !== undefined) updates.receiptFooter = receiptFooter?.trim() || "Thank you! Visit again.";
       if (currency) updates.currency = currency.trim();
+      if (categories !== undefined) updates.categories = categories;
 
       if (email) {
         const normalized = email.trim().toLowerCase();
@@ -357,6 +359,7 @@ export const updateProfile = async (req, res) => {
         currency: account.currency || "INR",
         merchantCode: account.merchantCode || null,
         logoUrl: account.logoUrl || null,
+        categories: account.categories || ["Drinks", "Snacks", "Food", "Other"],
         isVerified: account.isVerified,
         createdAt: account.createdAt,
         updatedAt: account.updatedAt,

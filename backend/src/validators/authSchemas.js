@@ -118,6 +118,7 @@ export const updateProfileSchema = {
 			ownerName: optionalString(120),
 			receiptFooter: optionalString(200),
 			currency: optionalString(10),
+			categories: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
 			
 			// Shared fields
 			email: emailSchema.optional().transform((v) => (v === "" ? undefined : v)),
