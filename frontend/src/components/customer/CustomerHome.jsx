@@ -352,28 +352,6 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
         />
       </div>
 
-      {/* ========== QUICK LINKS ========== */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-        {[
-          { id: 'receipts', icon: Receipt, label: 'All Receipts', color: 'emerald', bgColor: 'bg-emerald-50', textColor: 'text-emerald-600' },
-          { id: 'calendar', icon: Calendar, label: 'History', color: 'blue', bgColor: 'bg-blue-50', textColor: 'text-blue-600' },
-          { id: 'insights', icon: PieChart, label: 'Insights', color: 'purple', bgColor: 'bg-purple-50', textColor: 'text-purple-600' },
-          { id: 'profile', icon: Store, label: 'Profile', color: 'orange', bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
-        ].map(link => (
-          <button
-            key={link.id}
-            onClick={() => onNavigate(link.id)}
-            className="p-3 md:p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all group flex items-center gap-2 md:gap-3 active:scale-[0.98]"
-          >
-            <div className={`p-1.5 md:p-2 rounded-lg ${link.bgColor} ${link.textColor} group-hover:scale-105 transition-transform`}>
-              <link.icon size={14} className="md:w-[18px] md:h-[18px]" />
-            </div>
-            <span className="font-semibold text-slate-700 text-xs md:text-sm flex-1 text-left">{link.label}</span>
-            <ChevronRight size={14} className="text-slate-300 group-hover:text-slate-500 transition-colors hidden md:block" />
-          </button>
-        ))}
-      </div>
-
       {/* ========== RECENT ACTIVITY ========== */}
       <div>
         <div className="flex justify-between items-center mb-3 md:mb-4">

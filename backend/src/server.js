@@ -12,6 +12,8 @@ import receiptRoutes from "./routes/receiptRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 
 const app = express();
+// ✅ REQUIRED when behind Cloudflare / reverse proxy
+app.set("trust proxy", 1);
 
 // ============ SECURITY MIDDLEWARE ============
 
@@ -29,25 +31,31 @@ const globalLimiter = rateLimit({
 app.use("/api", globalLimiter);
 
 // CORS Configuration - Safe defaults
-const allowedOrigins = process.env.CLIENT_URL
-	? process.env.CLIENT_URL.split(",")
-	: ["http://localhost:5173"];
+// const allowedOrigins = process.env.CLIENT_URL
+// 	? process.env.CLIENT_URL.split(",")
+// 	: ["http://localhost:5173"];
 
-const corsOptions = {
-	origin: (origin, callback) => {
-		// Allow requests with no origin (mobile apps, curl, Postman)
-		if (!origin) return callback(null, true);
-		if (allowedOrigins.includes(origin)) {
-			return callback(null, true);
-		}
-		return callback(new Error("CORS not allowed"), false);
-	},
-	credentials: true,
-	methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-	allowedHeaders: ["Content-Type", "Authorization"],
-};
+// const corsOptions = {
+// 	origin: (origin, callback) => {
+// 		// Allow requests with no origin (mobile apps, curl, Postman)
+// 		if (!origin) return callback(null, true);
+// 		if (allowedOrigins.includes(origin)) {
+// 			return callback(null, true);
+// 		}
+// 		return callback(new Error("CORS not allowed"), false);
+// 	},
+// 	credentials: true,
+// 	methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+// 	allowedHeaders: ["Content-Type", "Authorization"],
+// };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+
+app.use(cors({
+  origin: true,        // allow Cloudflare + localhost
+  credentials: true
+}));
+
 
 // Body parsing with size limits (prevent DoS)
 app.use(express.json({ limit: "10kb" }));

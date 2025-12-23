@@ -524,27 +524,6 @@ const CustomerInsights = () => {
                 </div>
               </div>
 
-              {/* All Payment Methods List */}
-              <div className="grid grid-cols-2 gap-3">
-                {paymentMethods.map((pm, i) => {
-                  const Icon = getPaymentIcon(pm.method);
-                  const percentage = paymentMethods.reduce((sum, p) => sum + p.total, 0) > 0 
-                    ? Math.round((pm.total / paymentMethods.reduce((sum, p) => sum + p.total, 0)) * 100) 
-                    : 0;
-                  return (
-                    <div key={i} className="p-3 bg-slate-50 rounded-xl flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <Icon size={18} className="text-slate-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-700 text-sm capitalize">{pm.method}</p>
-                        <p className="text-xs text-slate-400">{pm.count} times • {percentage}%</p>
-                      </div>
-                      <p className="font-bold text-slate-800 text-sm">₹{pm.total.toLocaleString('en-IN')}</p>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
           )}
         </div>

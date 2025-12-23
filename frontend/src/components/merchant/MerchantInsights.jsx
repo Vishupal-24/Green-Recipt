@@ -374,77 +374,7 @@ const MerchantInsights = () => {
               </div>
             </div>
           )}
-
-          {/* Payment Methods */}
-          {paymentMethods?.length > 0 && (
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="font-bold text-slate-700 mb-4">Payment Methods</h3>
-              
-              {/* Payment Summary Cards - UPI vs Cash */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {/* UPI Card */}
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-100 md:col-span-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2.5 bg-emerald-500 rounded-lg">
-                      <Smartphone size={20} className="text-white" />
-                    </div>
-                    <span className="font-bold text-emerald-800">UPI Payments</span>
-                  </div>
-                  <p className="text-3xl font-bold text-emerald-700">
-                    ₹{(paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.total || 0).toLocaleString('en-IN')}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-sm text-emerald-600">
-                      {paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.count || 0} transactions
-                    </p>
-                    <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
-                      {paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.percentage || 0}%
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Cash Card */}
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100 md:col-span-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2.5 bg-amber-500 rounded-lg">
-                      <Banknote size={20} className="text-white" />
-                    </div>
-                    <span className="font-bold text-amber-800">Cash Payments</span>
-                  </div>
-                  <p className="text-3xl font-bold text-amber-700">
-                    ₹{(paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.total || 0).toLocaleString('en-IN')}
-                  </p>
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-sm text-amber-600">
-                      {paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.count || 0} transactions
-                    </p>
-                    <span className="text-xs font-bold bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
-                      {paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.percentage || 0}%
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* All Payment Methods Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {paymentMethods.map((pm, i) => {
-                  const Icon = getPaymentIcon(pm.method);
-                  return (
-                    <div key={i} className="p-4 bg-slate-50 rounded-xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                          <Icon size={18} className="text-slate-600" />
-                        </div>
-                        <p className="font-bold text-slate-700 text-sm capitalize">{pm.method}</p>
-                      </div>
-                      <p className="font-bold text-lg text-slate-800">₹{pm.total.toLocaleString('en-IN')}</p>
-                      <p className="text-xs text-slate-400">{pm.count} txns • {pm.percentage}%</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          
         </div>
       )}
 
