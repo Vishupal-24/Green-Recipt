@@ -30,8 +30,8 @@ const Home = () => {
         <Navbar />
         <Hero />
         <Benefits />
-        <Features />
-        <CTA />
+        {/* <Features /> */}
+        {/* <CTA /> */}
         <Footer />
       </div>
 
