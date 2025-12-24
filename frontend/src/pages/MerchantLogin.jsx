@@ -188,7 +188,7 @@ const MerchantLogin = () => {
     try {
       const { data } = await loginUser({ email, password, role: "merchant" });
       setSession({ token: data.token, role: data.role });
-      navigate("/merchant-dashboard");
+      navigate('/merchant/overview');
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {

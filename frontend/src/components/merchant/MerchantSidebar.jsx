@@ -91,7 +91,136 @@
 
 // export default MerchantSidebar;
 
+// import React from 'react';
+// import { 
+//   LayoutDashboard, 
+//   Calendar, 
+//   PlusCircle, 
+//   BarChart3, 
+//   Package, 
+//   User, 
+//   Store, 
+//   LogOut, 
+//   X,
+//   ChevronRight
+// } from 'lucide-react';
+
+// const MerchantSidebar = ({ activeTab, onNavigate, isOpen, onClose }) => {
+
+//   // 🚪 Logout Logic
+//   const handleLogout = () => {
+//     localStorage.removeItem('token');
+//     localStorage.removeItem('role');
+//     window.location.href = '/'; // Hard Refresh to clear state
+//   };
+
+//   // 🎨 Helper Component for Menu Items
+//   const NavItem = ({ id, icon: Icon, label, subLabel }) => {
+//     const isActive = activeTab === id;
+
+//     return (
+//       <button 
+//         onClick={() => { onNavigate(id); onClose(); }} 
+//         className={`
+//           w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out group relative
+//           ${isActive 
+//             ? 'bg-white text-emerald-700 shadow-md shadow-slate-200/50 scale-[1.02]' 
+//             : 'text-slate-700 hover:bg-white hover:text-slate-800 hover:shadow-sm'}
+//         `}
+//       >
+//         {/* Icon Box */}
+//         <div className={`
+//            p-2 rounded-xl transition-colors duration-300
+//            ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-transparent group-hover:bg-slate-50'}
+//         `}>
+//           <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+//         </div>
+
+//         {/* Text */}
+//         <div className="text-left flex-1">
+//           <span className={`block text-sm ${isActive ? 'font-black tracking-wide' : 'font-bold'}`}>
+//             {label}
+//           </span>
+//           {subLabel && (
+//              <span className="text-[10px] font-medium opacity-65 block mt-0.5">
+//                {subLabel}
+//              </span>
+//           )}
+//         </div>
+
+//         {/* Active Indicator Arrow */}
+//         {isActive && <ChevronRight size={16} className="text-emerald-400 opacity-50" />}
+//       </button>
+//     );
+//   };
+
+//   return (
+//     <>
+//       {/* 📱 Mobile Overlay (Backdrop) */}
+//       {isOpen && (
+//         <div 
+//           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 md:hidden transition-opacity" 
+//           onClick={onClose}
+//         />
+//       )}
+
+//       {/* 🔹 SIDEBAR CONTAINER */}
+//       <aside className={`
+//         fixed inset-y-0 left-0 z-40 w-72 bg-slate-50/80 border-r border-slate-200 backdrop-blur-xl
+//         transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)
+//         flex flex-col h-full
+//         md:static md:translate-x-0 
+//         ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+//       `}>
+
+//       {/* <aside className={`
+//         fixed inset-y-0 left-0 z-40 w-72 
+//         bg-white/95 border-r border-slate-200 backdrop-blur-xl  
+//         transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)
+//         flex flex-col h-full
+//         md:static md:translate-x-0 
+//         ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+//       `}> */}
+        
+//         {/* HEADER / LOGO */}
+//         <div className="h-24 flex items-center justify-between px-6 shrink-0">
+//           <div className="flex items-center gap-3">
+//             <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+//               <Store size={20} />
+//             </div>
+//             <div>
+//               <h1 className="font-black text-lg text-slate-900 tracking-tight leading-none">GreenReceipt</h1>
+//               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Merchant App</p>
+//             </div>
+//           </div>
+          
+//           {/* Close Button (Mobile) */}
+//           <button onClick={onClose} className="md:hidden p-2 text-slate-500 hover:bg-white hover:shadow-sm rounded-full transition-all">
+//             <X size={20} />
+//           </button>
+//         </div>
+
+//         {/* NAVIGATION LIST (Scrollable) */}
+//         <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-4 no-scrollbar">
+//           <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 mt-2">Main Menu</p>
+          
+//           <NavItem id="overview" icon={LayoutDashboard} label="Overview" subLabel="Dashboard" />
+//           <NavItem id="billing" icon={PlusCircle} label="Create Bill" subLabel="New Transaction" />
+//           <NavItem id="calendar" icon={Calendar} label="Calendar" subLabel="Sales History" />
+//           <NavItem id="insights" icon={BarChart3} label="Sales Insights" subLabel="Analytics" />
+//           <NavItem id="items" icon={Package} label="Items" subLabel="Inventory" />
+//           <NavItem id="profile" icon={User} label="Profile" subLabel="Shop Settings" />
+//         </div>
+
+//       </aside>
+//     </>
+//   );
+// };
+
+// export default MerchantSidebar;
+
 import React from 'react';
+import { NavLink } from 'react-router-dom'; // 👈 1. Import NavLink
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -100,57 +229,63 @@ import {
   Package, 
   User, 
   Store, 
-  LogOut, 
   X,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
 
-const MerchantSidebar = ({ activeTab, onNavigate, isOpen, onClose }) => {
+const MerchantSidebar = ({ isOpen, onClose }) => {
 
   // 🚪 Logout Logic
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    window.location.href = '/'; // Hard Refresh to clear state
+    if(window.confirm("Are you sure you want to logout?")) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      window.location.href = '/'; 
+    }
   };
 
   // 🎨 Helper Component for Menu Items
-  const NavItem = ({ id, icon: Icon, label, subLabel }) => {
-    const isActive = activeTab === id;
-
+  // Note: We changed props from 'id' to 'to'
+  const NavItem = ({ to, icon: Icon, label, subLabel }) => {
     return (
-      <button 
-        onClick={() => { onNavigate(id); onClose(); }} 
-        className={`
+      <NavLink 
+        to={to}
+        onClick={onClose} // Close sidebar on mobile click
+        className={({ isActive }) => `
           w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out group relative
           ${isActive 
             ? 'bg-white text-emerald-700 shadow-md shadow-slate-200/50 scale-[1.02]' 
             : 'text-slate-700 hover:bg-white hover:text-slate-800 hover:shadow-sm'}
         `}
       >
-        {/* Icon Box */}
-        <div className={`
-           p-2 rounded-xl transition-colors duration-300
-           ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-transparent group-hover:bg-slate-50'}
-        `}>
-          <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-        </div>
+        {({ isActive }) => (
+          <>
+            {/* Icon Box */}
+            <div className={`
+               p-2 rounded-xl transition-colors duration-300
+               ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-transparent group-hover:bg-slate-50'}
+            `}>
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+            </div>
 
-        {/* Text */}
-        <div className="text-left flex-1">
-          <span className={`block text-sm ${isActive ? 'font-black tracking-wide' : 'font-bold'}`}>
-            {label}
-          </span>
-          {subLabel && (
-             <span className="text-[10px] font-medium opacity-65 block mt-0.5">
-               {subLabel}
-             </span>
-          )}
-        </div>
+            {/* Text */}
+            <div className="text-left flex-1">
+              <span className={`block text-sm ${isActive ? 'font-black tracking-wide' : 'font-bold'}`}>
+                {label}
+              </span>
+              {subLabel && (
+                 <span className="text-[10px] font-medium opacity-65 block mt-0.5">
+                   {subLabel}
+                 </span>
+              )}
+            </div>
 
-        {/* Active Indicator Arrow */}
-        {isActive && <ChevronRight size={16} className="text-emerald-400 opacity-50" />}
-      </button>
+            {/* Active Indicator Arrow */}
+            {isActive && <ChevronRight size={16} className="text-emerald-400 opacity-50" />}
+          </>
+        )}
+      </NavLink>
     );
   };
 
@@ -166,7 +301,8 @@ const MerchantSidebar = ({ activeTab, onNavigate, isOpen, onClose }) => {
 
       {/* 🔹 SIDEBAR CONTAINER */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-72 bg-slate-50/80 border-r border-slate-200 backdrop-blur-xl
+        fixed inset-y-0 left-0 z-40 w-72 
+        bg-white/95 border-r border-slate-200 backdrop-blur-xl  
         transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)
         flex flex-col h-full
         md:static md:translate-x-0 
@@ -191,17 +327,29 @@ const MerchantSidebar = ({ activeTab, onNavigate, isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* NAVIGATION LIST (Scrollable) */}
+        {/* NAVIGATION LIST */}
         <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-4 no-scrollbar">
           <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 mt-2">Main Menu</p>
           
-          <NavItem id="overview" icon={LayoutDashboard} label="Overview" subLabel="Dashboard" />
-          <NavItem id="billing" icon={PlusCircle} label="Create Bill" subLabel="New Transaction" />
-          <NavItem id="calendar" icon={Calendar} label="Calendar" subLabel="Sales History" />
-          <NavItem id="insights" icon={BarChart3} label="Sales Insights" subLabel="Analytics" />
-          <NavItem id="items" icon={Package} label="Items" subLabel="Inventory" />
-          <NavItem id="profile" icon={User} label="Profile" subLabel="Shop Settings" />
+          {/* 👇 UPDATED LINKS: Pointing to real routes now */}
+          <NavItem to="/merchant/overview" icon={LayoutDashboard} label="Overview" subLabel="Dashboard" />
+          <NavItem to="/merchant/billing" icon={PlusCircle} label="Create Bill" subLabel="New Transaction" />
+          <NavItem to="/merchant/calendar" icon={Calendar} label="Calendar" subLabel="Sales History" />
+          <NavItem to="/merchant/insights" icon={BarChart3} label="Sales Insights" subLabel="Analytics" />
+          <NavItem to="/merchant/items" icon={Package} label="Items" subLabel="Inventory" />
+          <NavItem to="/merchant/profile" icon={User} label="Profile" subLabel="Shop Settings" />
         </div>
+
+        {/* LOGOUT BUTTON */}
+        {/* <div className="p-4 border-t border-slate-100">
+           <button 
+             onClick={handleLogout}
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors font-bold text-sm group"
+           >
+             <LogOut size={20} />
+             <span>Sign Out</span>
+           </button>
+        </div> */}
 
       </aside>
     </>
