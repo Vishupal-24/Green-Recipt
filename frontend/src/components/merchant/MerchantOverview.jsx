@@ -349,10 +349,10 @@
 // export default MerchantOverview;
 
 import React, { useState, useEffect, useMemo } from "react";
-// 👇 1. Import useNavigate
-import { useNavigate } from 'react-router-dom'; 
-import { ArrowUpRight, PlusCircle, ShoppingBag, Clock, X, Receipt, User, TrendingUp, Flame, MapPin, Phone as PhoneIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShoppingBag, Clock, X, User, Flame, Smartphone, Banknote, Wallet } from 'lucide-react';
 import { fetchMerchantReceipts } from '../../services/api';
+import { getNowIST } from '../../utils/timezone';
 
 const MerchantOverview = () => {
   // 👈 Removed unused 'onNavigate' prop
@@ -386,9 +386,21 @@ const MerchantOverview = () => {
     };
   }, []);
 
+  // Helpers to avoid crashes on bad data
+  const toValidDate = (input) => {
+    if (!input) return null;
+    const parsed = new Date(input);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const toDateString = (input) => {
+    const d = toValidDate(input);
+    return d ? d.toISOString().split('T')[0] : null;
+  };
+
   // Filter Logic
-  const todayStr = new Date().toISOString().split('T')[0];
-  const todaysBills = sales.filter(bill => bill.date === todayStr);
+  const todayStr = getNowIST().toISOString().split('T')[0];
+  const todaysBills = sales.filter((bill) => toDateString(bill.date) === todayStr);
   const totalSales = todaysBills.reduce((sum, bill) => sum + (bill.total ?? bill.amount ?? 0), 0); 
   const billCount = todaysBills.length;
 
@@ -398,8 +410,9 @@ const MerchantOverview = () => {
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
   
-  const monthBills = sales.filter(bill => {
-    const d = new Date(bill.date);
+  const monthBills = sales.filter((bill) => {
+    const d = toValidDate(bill.date);
+    if (!d) return false;
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
 
@@ -416,7 +429,10 @@ const MerchantOverview = () => {
 
   // 3. Yearly Logic (Simple filter)
   const yearSales = sales
-    .filter(b => new Date(b.date).getFullYear() === currentYear)
+    .filter((b) => {
+      const d = toValidDate(b.date);
+      return d ? d.getFullYear() === currentYear : false;
+    })
     .reduce((sum, b) => sum + (b.total ?? b.amount ?? 0), 0);
 
   // ----------------------------------------
@@ -424,7 +440,7 @@ const MerchantOverview = () => {
   // ... existing month logic ...
 
   // 📊 NEW: Weekly Logic (Current Week)
-  const todayDate = new Date();
+  const todayDate = getNowIST();
   const firstDayOfWeek = new Date(todayDate);
   // Adjust to get Monday (or Sunday) as start of week
   const day = firstDayOfWeek.getDay();
@@ -432,8 +448,9 @@ const MerchantOverview = () => {
   firstDayOfWeek.setDate(diff);
   firstDayOfWeek.setHours(0,0,0,0);
 
-  const weekBills = sales.filter(bill => {
-    const billDate = new Date(bill.date);
+  const weekBills = sales.filter((bill) => {
+    const billDate = toValidDate(bill.date);
+    if (!billDate) return false;
     return billDate >= firstDayOfWeek && billDate <= todayDate;
   });
 

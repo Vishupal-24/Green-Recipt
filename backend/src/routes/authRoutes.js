@@ -87,5 +87,3 @@ router.delete('/me', protect, deleteAccount);
 router.post('/logout-all', protect, logoutAll);
 
 export default router;
-
-export default router;

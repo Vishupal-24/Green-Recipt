@@ -50,6 +50,12 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // State for Step 3: Categories input
+  const [newCategory, setNewCategory] = useState('');
+  
+  // State for Step 4: Items input
+  const [newItem, setNewItem] = useState({ name: '', price: '', categoryName: '' });
+  
   // Form Data
   const [formData, setFormData] = useState({
     // Step 1: Business Info
@@ -296,8 +302,6 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
   // STEP 3: CATEGORIES
   // ==========================================
   const renderCategoriesStep = () => {
-    const [newCategory, setNewCategory] = useState('');
-
     const addCategory = () => {
       const trimmed = newCategory.trim();
       if (!trimmed) return;
@@ -433,8 +437,6 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
   // STEP 4: ITEMS
   // ==========================================
   const renderItemsStep = () => {
-    const [newItem, setNewItem] = useState({ name: '', price: '', categoryName: '' });
-
     const addItem = () => {
       if (!newItem.name.trim() || !newItem.price || !newItem.categoryName) {
         setError('Please fill all item fields');
@@ -667,15 +669,20 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
     setError('');
 
     try {
-      await api.completeOnboarding();
+      const response = await api.completeOnboarding();
+      console.log('Onboarding complete response:', response);
       localStorage.setItem('isProfileComplete', 'true');
-      onComplete?.();
+      // Small delay to ensure localStorage is written before callback
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (onComplete) {
+        onComplete();
+      }
     } catch (err) {
       console.error('Complete error:', err);
       setError(err.response?.data?.message || 'Failed to complete setup.');
-    } finally {
       setLoading(false);
     }
+    // Don't set loading to false on success - let the parent component handle the redirect
   };
 
   const handleSkip = async () => {
@@ -687,15 +694,20 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
     setError('');
 
     try {
-      await api.skipOnboarding();
+      const response = await api.skipOnboarding();
+      console.log('Skip onboarding response:', response);
       localStorage.setItem('isProfileComplete', 'true');
-      onComplete?.();
+      // Small delay to ensure localStorage is written before callback
+      await new Promise(resolve => setTimeout(resolve, 50));
+      if (onComplete) {
+        onComplete();
+      }
     } catch (err) {
       console.error('Skip error:', err);
       setError(err.response?.data?.message || 'Failed to skip setup.');
-    } finally {
       setLoading(false);
     }
+    // Don't set loading to false on success - let the parent component handle the redirect
   };
 
   // ==========================================
