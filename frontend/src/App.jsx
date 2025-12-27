@@ -170,6 +170,9 @@ import MerchantSignup from "./pages/MerchantSignup";
 import MerchantVerify from "./pages/MerchantVerify";
 import MerchantDashboard from "./pages/MerchantDashboard";
 
+// Success Page
+import SignupSuccess from "./pages/SignupSuccess";
+
 // Utils
 import ProtectedRoute from "./components/ProtectedRoute";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -199,6 +202,9 @@ function App() {
           <Route path="/customer-login" element={<CustomerLogin />} />
           <Route path="/customer-signup" element={<CustomerSignup />} />
           <Route path="/verify-customer" element={<CustomerVerify />} />
+          
+          {/* Signup Success Page */}
+          <Route path="/signup-success" element={<SignupSuccess />} />
 
           {/* TEMP: Preview Route (Delete this later) */}
           <Route path="/test-tour" element={<AppWalkthrough />} />

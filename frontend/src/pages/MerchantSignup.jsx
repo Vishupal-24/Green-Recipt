@@ -272,7 +272,13 @@ const MerchantSignup = () => {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
-      navigate("/verify-merchant", { state: { email: formData.email } });
+      navigate("/signup-success", { 
+        state: { 
+          userType: "merchant",
+          email: formData.email,
+          name: formData.shopName 
+        } 
+      });
     } catch (error) {
       const message = error.response?.data?.message || "Signup failed";
       setError(message);
