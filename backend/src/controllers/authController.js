@@ -29,6 +29,11 @@ if (!JWT_SECRET) {
 
 export const forgotPassword = async (req, res) => {
   try {
+    // Feature intentionally disabled until email/OTP delivery is re-enabled.
+    return res.status(501).json({
+      message: "Password reset via email is temporarily unavailable. Please contact support.",
+    });
+
     const { email, role } = req.body;
 
     // Helper to find the right collection
@@ -69,6 +74,11 @@ export const forgotPassword = async (req, res) => {
 // 2. RESET PASSWORD (Verifies OTP + Sets New Password)
 export const resetPassword = async (req, res) => {
   try {
+    // Feature intentionally disabled until email/OTP delivery is re-enabled.
+    return res.status(501).json({
+      message: "Password reset via email is temporarily unavailable. Please contact support.",
+    });
+
     const { email, role, otp, newPassword } = req.body;
 
     const account = await findAccountByRole(email, role);
@@ -273,25 +283,28 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    /*
-     * OTP/reset via email intentionally disabled. Keep legacy logic commented to avoid user-facing churn:
-     *
-     * // Resend cooldown
-     * // if (account.otpLastSentAt && Date.now() - account.otpLastSentAt.getTime() < OTP_RESEND_WINDOW_MS) { ... }
-     *
-     * // const otp = Math.floor(100000 + Math.random() * 900000).toString();
-     * // const otpHash = await bcrypt.hash(otp, 10);
-     * // account.otpCodeHash = otpHash;
-     * // account.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-     * // account.otpLastSentAt = new Date();
-     * // await account.save();
-     * // await sendOtpEmail(email, otp);
-     */
+    const normalizedEmail = email.trim().toLowerCase();
+    const Model = role === "merchant" ? Merchant : User;
 
-    // Return neutral success to avoid exposing OTP disablement to end-users.
-    return res.json({ message: "If an account exists, reset instructions have been sent." });
-    
-    // Store refresh token in database
+    // Include password + refresh fields for auth checks
+    const account = await Model.findOne({ email: normalizedEmail })
+      .select("+password +refreshToken +refreshTokenExpiry +tokenVersion");
+
+    // Intentionally vague to avoid user enumeration
+    if (!account) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const isMatch = await account.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Issue tokens
+    const accessToken = generateAccessToken(account);
+    const refreshToken = generateRefreshToken(account);
+
+    // Persist refresh token hash and metadata
     await persistRefreshToken(account, refreshToken);
 
     res.json({
@@ -301,11 +314,11 @@ export const login = async (req, res) => {
       refreshExpiresIn: REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60, // 7 days in seconds
       role: account.role,
       user:
-        role === "customer"
+        account.role === "customer"
           ? { id: account._id, name: account.name, email: account.email }
-          : { 
-              id: account._id, 
-              shopName: account.shopName, 
+          : {
+              id: account._id,
+              shopName: account.shopName,
               email: account.email,
               isProfileComplete: account.isProfileComplete || false,
             },
