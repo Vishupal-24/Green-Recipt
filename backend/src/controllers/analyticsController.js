@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import Receipt from "../models/Receipt.js";
 import { getISTDateRanges, getNowIST, toIST, formatISTDateTime } from "../utils/timezone.js";
 
+const IST_TIMEZONE = "Asia/Kolkata";
+
 // ============ SIMPLE IN-MEMORY CACHE ============
 // In production, use Redis for distributed caching
 const analyticsCache = new Map();
@@ -168,7 +170,7 @@ export const getCustomerAnalytics = async (req, res) => {
         },
         {
           $group: {
-            _id: { $dateToString: { format: "%Y-%m-%d", date: "$transactionDate" } },
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$transactionDate", timezone: IST_TIMEZONE } },
             total: { $sum: "$total" },
             count: { $sum: 1 },
           },
@@ -187,8 +189,8 @@ export const getCustomerAnalytics = async (req, res) => {
         {
           $group: {
             _id: { 
-              year: { $year: "$transactionDate" }, 
-              month: { $month: "$transactionDate" } 
+              year: { $year: { date: "$transactionDate", timezone: IST_TIMEZONE } }, 
+              month: { $month: { date: "$transactionDate", timezone: IST_TIMEZONE } } 
             },
             total: { $sum: "$total" },
             count: { $sum: 1 },
@@ -457,7 +459,7 @@ export const getMerchantAnalytics = async (req, res) => {
         },
         {
           $group: {
-            _id: { $dateToString: { format: "%Y-%m-%d", date: "$transactionDate" } },
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$transactionDate", timezone: IST_TIMEZONE } },
             total: { $sum: "$total" },
             count: { $sum: 1 },
           },
@@ -470,7 +472,7 @@ export const getMerchantAnalytics = async (req, res) => {
         { $match: { ...baseMatch, transactionDate: { $gte: startOfMonth } } },
         {
           $group: {
-            _id: { $hour: "$transactionDate" },
+            _id: { $hour: { date: "$transactionDate", timezone: IST_TIMEZONE } },
             total: { $sum: "$total" },
             count: { $sum: 1 },
           },
@@ -483,7 +485,7 @@ export const getMerchantAnalytics = async (req, res) => {
         { $match: { ...baseMatch, transactionDate: { $gte: startOfMonth } } },
         {
           $group: {
-            _id: { $dayOfWeek: "$transactionDate" }, // 1=Sunday, 2=Monday, etc.
+            _id: { $dayOfWeek: { date: "$transactionDate", timezone: IST_TIMEZONE } }, // 1=Sunday, 2=Monday, etc.
             total: { $sum: "$total" },
             count: { $sum: 1 },
           },
@@ -541,8 +543,8 @@ export const getMerchantAnalytics = async (req, res) => {
         {
           $group: {
             _id: { 
-              year: { $year: "$transactionDate" }, 
-              month: { $month: "$transactionDate" } 
+              year: { $year: { date: "$transactionDate", timezone: IST_TIMEZONE } }, 
+              month: { $month: { date: "$transactionDate", timezone: IST_TIMEZONE } } 
             },
             total: { $sum: "$total" },
             count: { $sum: 1 },
