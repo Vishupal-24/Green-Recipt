@@ -7,25 +7,26 @@ import {
 } from 'lucide-react';
 import { fetchMerchantAnalytics } from '../../services/api';
 import { formatISTDisplay, toIST } from '../../utils/timezone';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ============== SKELETON LOADER ==============
-const InsightsSkeleton = () => (
+const InsightsSkeleton = ({ isDark }) => (
   <div className="space-y-6 animate-pulse max-w-5xl mx-auto">
-    <div className="h-8 bg-slate-200 rounded w-48" />
+    <div className={`h-8 rounded w-48 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="h-40 bg-slate-200 rounded-2xl" />
-      <div className="h-40 bg-slate-200 rounded-2xl" />
+      <div className={`h-40 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+      <div className={`h-40 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
     </div>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-slate-200 rounded-2xl" />)}
+      {[1, 2, 3, 4].map(i => <div key={i} className={`h-28 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />)}
     </div>
-    <div className="h-64 bg-slate-200 rounded-2xl" />
-    <div className="h-48 bg-slate-200 rounded-2xl" />
+    <div className={`h-64 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+    <div className={`h-48 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
   </div>
 );
 
 // ============== MINI BAR CHART ==============
-const MiniBarChart = ({ data, height = 60, color = 'emerald' }) => {
+const MiniBarChart = ({ data, height = 60, color = 'emerald', isDark }) => {
   if (!data || data.length === 0) return null;
   const max = Math.max(...data.map(d => d.value), 1);
   const colorClass = {
@@ -43,7 +44,7 @@ const MiniBarChart = ({ data, height = 60, color = 'emerald' }) => {
           className={`flex-1 ${colorClass} rounded-t opacity-80 hover:opacity-100 transition-opacity cursor-pointer relative group`}
           style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
         >
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 ${isDark ? 'bg-slate-700 text-white' : 'bg-slate-800 text-white'}`}>
             {d.label}: ₹{d.value.toLocaleString('en-IN')}
           </div>
         </div>
@@ -53,33 +54,33 @@ const MiniBarChart = ({ data, height = 60, color = 'emerald' }) => {
 };
 
 // ============== STAT CARD ==============
-const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color = 'emerald' }) => {
+const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color = 'emerald', isDark }) => {
   const colorClasses = {
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100',
-    orange: 'bg-orange-50 text-orange-600 border-orange-100',
-    slate: 'bg-slate-50 text-slate-600 border-slate-100',
+    emerald: isDark ? 'bg-emerald-900/30 text-emerald-400 border-emerald-800' : 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    blue: isDark ? 'bg-blue-900/30 text-blue-400 border-blue-800' : 'bg-blue-50 text-blue-600 border-blue-100',
+    purple: isDark ? 'bg-purple-900/30 text-purple-400 border-purple-800' : 'bg-purple-50 text-purple-600 border-purple-100',
+    orange: isDark ? 'bg-orange-900/30 text-orange-400 border-orange-800' : 'bg-orange-50 text-orange-600 border-orange-100',
+    slate: isDark ? 'bg-slate-700 text-slate-300 border-slate-600' : 'bg-slate-50 text-slate-600 border-slate-100',
   };
   const iconBg = colorClasses[color] || colorClasses.emerald;
 
   return (
-    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+    <div className={`p-4 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
       <div className="flex items-start justify-between">
         <div className={`p-2 rounded-xl ${iconBg}`}>
           <Icon size={18} />
         </div>
         {trend && (
-          <div className={`flex items-center gap-0.5 text-xs font-bold ${trend === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>
+          <div className={`flex items-center gap-0.5 text-xs font-bold ${trend === 'up' ? 'text-emerald-500' : 'text-red-500'}`}>
             {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
             {trendValue}%
           </div>
         )}
       </div>
       <div className="mt-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</p>
-        <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
-        {subValue && <p className="text-xs text-slate-400 mt-0.5">{subValue}</p>}
+        <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+        <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{value}</p>
+        {subValue && <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{subValue}</p>}
       </div>
     </div>
   );
@@ -96,6 +97,7 @@ const getPaymentIcon = (method) => {
 
 // ============== MAIN COMPONENT ==============
 const MerchantInsights = () => {
+  const { isDark } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -205,7 +207,7 @@ const MerchantInsights = () => {
   }, [analytics]);
 
   // ============== RENDER ==============
-  if (loading) return <InsightsSkeleton />;
+  if (loading) return <InsightsSkeleton isDark={isDark} />;
 
   const { summary, insights, topItems, paymentMethods, topCustomers, recentActivity } = analytics || {};
   const hasNoSalesData = !insights?.hasData;
@@ -216,36 +218,36 @@ const MerchantInsights = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Sales Insights</h2>
-          <p className="text-slate-500 text-sm">Understand what's selling and when.</p>
+          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Sales Insights</h2>
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Understand what's selling and when.</p>
         </div>
         <button 
           onClick={() => loadAnalytics(true)}
           disabled={refreshing}
-          className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+          className={`p-2.5 border rounded-xl transition-colors disabled:opacity-50 ${isDark ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'}`}
         >
-          <RefreshCw size={18} className={`text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+        <div className={`flex items-center gap-2 p-4 rounded-xl border text-sm ${isDark ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
           <AlertTriangle size={18} /> {error}
         </div>
       )}
 
       {/* Empty State Banner - Show when no sales data */}
       {hasNoSalesData && !error && (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-8 rounded-2xl border border-slate-200 text-center">
-          <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <BarChart3 size={32} className="text-slate-400" />
+        <div className={`p-8 rounded-2xl border text-center ${isDark ? 'bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200'}`}>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+            <BarChart3 size={32} className={isDark ? 'text-slate-500' : 'text-slate-400'} />
           </div>
-          <h3 className="text-xl font-bold text-slate-700 mb-2">No Sales Data Available Yet</h3>
-          <p className="text-slate-500 text-sm max-w-md mx-auto mb-4">
+          <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-700'}`}>No Sales Data Available Yet</h3>
+          <p className={`text-sm max-w-md mx-auto mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Your sales insights will appear here once you start generating bills. 
             Create your first bill to unlock powerful analytics and recommendations!
           </p>
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+          <div className={`flex items-center justify-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             <Clock size={14} />
             <span>Analytics update automatically with each new transaction</span>
           </div>
@@ -253,7 +255,7 @@ const MerchantInsights = () => {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+      <div className={`flex gap-2 p-1 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
           { id: 'items', label: 'Top Items', icon: Package },
@@ -264,8 +266,8 @@ const MerchantInsights = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               activeTab === tab.id 
-                ? 'bg-white text-emerald-600 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700'
+                ? isDark ? 'bg-slate-700 text-emerald-400 shadow-sm' : 'bg-white text-emerald-600 shadow-sm'
+                : isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             <tab.icon size={16} />
@@ -280,74 +282,74 @@ const MerchantInsights = () => {
           {/* Insight Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Peak Time Card */}
-            <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 relative overflow-hidden">
+            <div className={`p-6 rounded-2xl border relative overflow-hidden ${isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100'}`}>
               <div className="relative z-10">
-                <div className="flex items-center gap-2 text-emerald-800 font-bold mb-1">
+                <div className={`flex items-center gap-2 font-bold mb-1 ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>
                   <Clock size={18} /> Peak Sales Time
                 </div>
                 {insights?.peakHour ? (
                   <>
-                    <p className="text-4xl font-bold text-emerald-600 mt-2">
+                    <p className={`text-4xl font-bold mt-2 ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
                       {insights.peakHour.formatted}
                     </p>
-                    <p className="text-xs text-emerald-700 mt-2 font-medium">
+                    <p className={`text-xs mt-2 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
                       {insights.peakHour.salesCount} sale{insights.peakHour.salesCount !== 1 ? 's' : ''} • ₹{(insights.peakHour.totalRevenue || 0).toLocaleString('en-IN')} revenue
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-emerald-600/50 mt-2">
+                    <p className={`text-2xl font-bold mt-2 ${isDark ? 'text-emerald-400/50' : 'text-emerald-600/50'}`}>
                       No data yet
                     </p>
-                    <p className="text-xs text-emerald-700/70 mt-2 font-medium">
+                    <p className={`text-xs mt-2 font-medium ${isDark ? 'text-emerald-500/70' : 'text-emerald-700/70'}`}>
                       Insights will appear after your first sale
                     </p>
                   </>
                 )}
               </div>
-              <Clock className="absolute -right-4 -bottom-4 text-emerald-200 opacity-50" size={120} />
+              <Clock className={`absolute -right-4 -bottom-4 opacity-20 ${isDark ? 'text-emerald-500' : 'text-emerald-200'}`} size={120} />
             </div>
 
             {/* Busiest Day Card */}
-            <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100 relative overflow-hidden">
+            <div className={`p-6 rounded-2xl border relative overflow-hidden ${isDark ? 'bg-blue-900/30 border-blue-800' : 'bg-blue-50 border-blue-100'}`}>
               <div className="relative z-10">
-                <div className="flex items-center gap-2 text-blue-800 font-bold mb-1">
+                <div className={`flex items-center gap-2 font-bold mb-1 ${isDark ? 'text-blue-400' : 'text-blue-800'}`}>
                   <Calendar size={18} /> Busiest Day
                 </div>
                 {insights?.busiestDay ? (
                   <>
-                    <p className="text-4xl font-bold text-blue-600 mt-2">
+                    <p className={`text-4xl font-bold mt-2 ${isDark ? 'text-blue-300' : 'text-blue-600'}`}>
                       {insights.busiestDay.name}
                     </p>
-                    <p className="text-xs text-blue-700 mt-2 font-medium">
+                    <p className={`text-xs mt-2 font-medium ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
                       {insights.busiestDay.salesCount} sale{insights.busiestDay.salesCount !== 1 ? 's' : ''} • ₹{(insights.busiestDay.totalRevenue || 0).toLocaleString('en-IN')} revenue
                     </p>
                   </>
                 ) : (
                   <>
-                    <p className="text-2xl font-bold text-blue-600/50 mt-2">
+                    <p className={`text-2xl font-bold mt-2 ${isDark ? 'text-blue-400/50' : 'text-blue-600/50'}`}>
                       No data yet
                     </p>
-                    <p className="text-xs text-blue-700/70 mt-2 font-medium">
+                    <p className={`text-xs mt-2 font-medium ${isDark ? 'text-blue-500/70' : 'text-blue-700/70'}`}>
                       Need sales across multiple days to identify patterns
                     </p>
                   </>
                 )}
               </div>
-              <Calendar className="absolute -right-4 -bottom-4 text-blue-200 opacity-50" size={120} />
+              <Calendar className={`absolute -right-4 -bottom-4 opacity-20 ${isDark ? 'text-blue-500' : 'text-blue-200'}`} size={120} />
             </div>
           </div>
 
           {/* Slowest Day Alert Card (if busiest and slowest are different) */}
           {insights?.slowestDay && insights?.busiestDay && insights.slowestDay.dayOfWeek !== insights.busiestDay.dayOfWeek && (
-            <div className="bg-orange-50 p-5 rounded-2xl border border-orange-100">
+            <div className={`p-5 rounded-2xl border ${isDark ? 'bg-orange-900/30 border-orange-800' : 'bg-orange-50 border-orange-100'}`}>
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-orange-100 rounded-xl">
-                  <CalendarX size={24} className="text-orange-600" />
+                <div className={`p-3 rounded-xl ${isDark ? 'bg-orange-800/50' : 'bg-orange-100'}`}>
+                  <CalendarX size={24} className={isDark ? 'text-orange-400' : 'text-orange-600'} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-orange-800">Slowest Day: {insights.slowestDay.name}</h4>
-                  <p className="text-sm text-orange-700 mt-1">
+                  <h4 className={`font-bold ${isDark ? 'text-orange-300' : 'text-orange-800'}`}>Slowest Day: {insights.slowestDay.name}</h4>
+                  <p className={`text-sm mt-1 ${isDark ? 'text-orange-400' : 'text-orange-700'}`}>
                     Only {insights.slowestDay.salesCount} sale{insights.slowestDay.salesCount !== 1 ? 's' : ''} (₹{(insights.slowestDay.totalRevenue || 0).toLocaleString('en-IN')}) compared to {insights.busiestDay.salesCount} on {insights.busiestDay.name}.
                     Consider running "{insights.slowestDay.name} Special" promotions!
                   </p>
@@ -366,6 +368,7 @@ const MerchantInsights = () => {
               trend={summary?.changes?.monthOverMonth >= 0 ? 'up' : 'down'}
               trendValue={Math.abs(summary?.changes?.monthOverMonth || 0)}
               color="emerald"
+              isDark={isDark}
             />
             <StatCard
               icon={Calendar}
@@ -375,6 +378,7 @@ const MerchantInsights = () => {
               trend={summary?.changes?.weekOverWeek >= 0 ? 'up' : 'down'}
               trendValue={Math.abs(summary?.changes?.weekOverWeek || 0)}
               color="blue"
+              isDark={isDark}
             />
             <StatCard
               icon={Receipt}
@@ -382,6 +386,7 @@ const MerchantInsights = () => {
               value={(summary?.totalReceiptsAllTime || 0).toLocaleString()}
               subValue="Total receipts"
               color="purple"
+              isDark={isDark}
             />
             <StatCard
               icon={TrendingUp}
@@ -389,30 +394,31 @@ const MerchantInsights = () => {
               value={`₹${(summary?.thisMonth?.avgPerDay || 0).toLocaleString('en-IN')}`}
               subValue="This month"
               color="orange"
+              isDark={isDark}
             />
           </div>
 
           {/* Daily Sales Chart */}
           {chartData.length > 0 ? (
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Daily Sales</h3>
-                <span className="text-xs text-slate-400">Last 14 days</span>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Daily Sales</h3>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Last 14 days</span>
               </div>
-              <MiniBarChart data={chartData} height={100} color="emerald" />
-              <div className="flex justify-between mt-2 text-[10px] text-slate-400 overflow-hidden">
+              <MiniBarChart data={chartData} height={100} color="emerald" isDark={isDark} />
+              <div className={`flex justify-between mt-2 text-[10px] overflow-hidden ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {chartData.filter((_, i) => i % 2 === 0).map((d, i) => (
                   <span key={i}>{d.label}</span>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Daily Sales</h3>
-                <span className="text-xs text-slate-400">Last 14 days</span>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Daily Sales</h3>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Last 14 days</span>
               </div>
-              <div className="h-[100px] flex items-center justify-center text-slate-400 text-sm">
+              <div className={`h-[100px] flex items-center justify-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 Sales chart will appear after your first transaction
               </div>
             </div>
@@ -466,20 +472,20 @@ const MerchantInsights = () => {
       {activeTab === 'items' && (
         <div className="space-y-6 animate-fade-in">
           {/* Top Items */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-slate-700 flex items-center gap-2">
-                <TrendingUp size={20} className="text-emerald-600"/> Top Selling Items
+              <h3 className={`font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-700'}`}>
+                <TrendingUp size={20} className="text-emerald-500"/> Top Selling Items
               </h3>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">This Month</span>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${isDark ? 'text-emerald-400 bg-emerald-900/30' : 'text-emerald-600 bg-emerald-50'}`}>This Month</span>
             </div>
 
             <div className="space-y-4">
               {(topItems || []).length === 0 && (
                 <div className="text-center py-8">
-                  <Package size={40} className="text-slate-300 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">No item sales data yet</p>
-                  <p className="text-xs text-slate-400 mt-1">Your top-selling items will appear here after your first sale</p>
+                  <Package size={40} className={isDark ? 'text-slate-600 mx-auto mb-3' : 'text-slate-300 mx-auto mb-3'} />
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No item sales data yet</p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Your top-selling items will appear here after your first sale</p>
                 </div>
               )}
               {(topItems || []).map((item, idx) => {
@@ -488,23 +494,23 @@ const MerchantInsights = () => {
                   <div key={idx}>
                     <div className="flex justify-between text-sm mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                           {idx + 1}
                         </span>
-                        <span className="font-bold text-slate-700">{item.name}</span>
+                        <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>{item.name}</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-bold text-slate-800">{item.quantity} sold</span>
-                        <span className="text-slate-400 text-xs ml-2">• ₹{item.totalRevenue.toLocaleString('en-IN')}</span>
+                        <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{item.quantity} sold</span>
+                        <span className={`text-xs ml-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>• ₹{item.totalRevenue.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
-                    <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-3 w-full rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
                       <div 
                         className={`h-full ${colors[idx % colors.length]} rounded-full transition-all duration-1000`} 
                         style={{ width: `${item.percentage}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-slate-400 mt-1">Avg price: ₹{item.avgPrice}</p>
+                    <p className={`text-[11px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Avg price: ₹{item.avgPrice}</p>
                   </div>
                 );
               })}
@@ -512,9 +518,9 @@ const MerchantInsights = () => {
           </div>
 
           {/* Top Customers */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+          <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-700 flex items-center gap-2">
+              <h3 className={`font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-700'}`}>
                 <Users size={18} className="text-blue-500" /> Top Customers
               </h3>
               <Award size={18} className="text-amber-500" />
@@ -522,25 +528,25 @@ const MerchantInsights = () => {
             {topCustomers?.length > 0 ? (
               <div className="space-y-3">
                 {topCustomers.map((customer, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                  <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-sm font-bold text-slate-600">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${isDark ? 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-300' : 'bg-gradient-to-br from-slate-200 to-slate-300 text-slate-600'}`}>
                         {(customer.name || 'A')[0].toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-700 text-sm">{customer.name}</p>
-                        <p className="text-xs text-slate-400">{customer.visits} visit{customer.visits !== 1 ? 's' : ''}</p>
+                        <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-700'}`}>{customer.name}</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{customer.visits} visit{customer.visits !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
-                    <p className="font-bold text-slate-800">₹{customer.totalSpent.toLocaleString('en-IN')}</p>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{customer.totalSpent.toLocaleString('en-IN')}</p>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <Users size={40} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-500">No customer data yet</p>
-                <p className="text-xs text-slate-400 mt-1">Customer insights will appear once registered customers make purchases</p>
+                <Users size={40} className={isDark ? 'text-slate-600 mx-auto mb-3' : 'text-slate-300 mx-auto mb-3'} />
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No customer data yet</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Customer insights will appear once registered customers make purchases</p>
               </div>
             )}
           </div>
@@ -552,25 +558,25 @@ const MerchantInsights = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Monthly Trend */}
           {monthlyChartData.length > 0 ? (
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Monthly Trend</h3>
-                <span className="text-xs text-slate-400">Last 6 months</span>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Monthly Trend</h3>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Last 6 months</span>
               </div>
-              <MiniBarChart data={monthlyChartData} height={120} color="blue" />
-              <div className="flex justify-between mt-2 text-xs text-slate-400">
+              <MiniBarChart data={monthlyChartData} height={120} color="blue" isDark={isDark} />
+              <div className={`flex justify-between mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {monthlyChartData.map((d, i) => (
                   <span key={i}>{d.label}</span>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Monthly Trend</h3>
-                <span className="text-xs text-slate-400">Last 6 months</span>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Monthly Trend</h3>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Last 6 months</span>
               </div>
-              <div className="h-[120px] flex items-center justify-center text-slate-400 text-sm">
+              <div className={`h-[120px] flex items-center justify-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 Monthly trends will appear as you accumulate sales data
               </div>
             </div>
@@ -586,6 +592,7 @@ const MerchantInsights = () => {
               trend={summary?.changes?.weekOverWeek >= 0 ? 'up' : 'down'}
               trendValue={Math.abs(summary?.changes?.weekOverWeek || 0)}
               color="emerald"
+              isDark={isDark}
             />
             <StatCard
               icon={Clock}
@@ -593,6 +600,7 @@ const MerchantInsights = () => {
               value={`₹${(summary?.lastWeek?.total || 0).toLocaleString('en-IN')}`}
               subValue={`${summary?.lastWeek?.count || 0} receipts`}
               color="slate"
+              isDark={isDark}
             />
           </div>
 
@@ -606,6 +614,7 @@ const MerchantInsights = () => {
               trend={summary?.changes?.monthOverMonth >= 0 ? 'up' : 'down'}
               trendValue={Math.abs(summary?.changes?.monthOverMonth || 0)}
               color="blue"
+              isDark={isDark}
             />
             <StatCard
               icon={Calendar}
@@ -613,35 +622,36 @@ const MerchantInsights = () => {
               value={`₹${(summary?.lastMonth?.total || 0).toLocaleString('en-IN')}`}
               subValue={`${summary?.lastMonth?.count || 0} receipts`}
               color="slate"
+              isDark={isDark}
             />
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-            <h3 className="font-bold text-slate-700 mb-4">Recent Activity</h3>
+          <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
+            <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-700'}`}>Recent Activity</h3>
             {recentActivity?.length > 0 ? (
               <div className="space-y-3">
                 {recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                      <Receipt size={18} className="text-slate-500" />
+                  <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-slate-600' : 'bg-white'}`}>
+                      <Receipt size={18} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-700 text-sm truncate">{activity.customer}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-slate-700'}`}>{activity.customer}</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
                         {formatISTDisplay(toIST(activity.date), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         {' • '}{activity.itemCount} item{activity.itemCount !== 1 ? 's' : ''} • {activity.paymentMethod}
                       </p>
                     </div>
-                    <p className="font-bold text-slate-700">₹{activity.amount.toLocaleString('en-IN')}</p>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>₹{activity.amount.toLocaleString('en-IN')}</p>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8">
-                <Receipt size={40} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-500">No recent activity yet</p>
-                <p className="text-xs text-slate-400 mt-1">Your latest transactions will appear here</p>
+                <Receipt size={40} className={isDark ? 'text-slate-600 mx-auto mb-3' : 'text-slate-300 mx-auto mb-3'} />
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No recent activity yet</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Your latest transactions will appear here</p>
               </div>
             )}
           </div>
@@ -650,28 +660,30 @@ const MerchantInsights = () => {
 
       {/* Smart Suggestions */}
       {suggestions.length > 0 && (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6 rounded-2xl border border-slate-200">
+        <div className={`p-6 rounded-2xl border ${isDark ? 'bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="text-amber-500" size={20} />
-            <h3 className="font-bold text-slate-700">Smart Suggestions</h3>
+            <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Smart Suggestions</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {suggestions.map((tip, i) => {
               const Icon = tip.icon;
-              const bgColor = tip.type === 'warning' ? 'bg-amber-50 border-amber-100' 
-                           : tip.type === 'success' ? 'bg-emerald-50 border-emerald-100'
-                           : 'bg-white border-slate-100';
-              const iconColor = tip.type === 'warning' ? 'text-amber-600' 
-                             : tip.type === 'success' ? 'text-emerald-600'
-                             : 'text-blue-600';
+              const bgColor = tip.type === 'warning' 
+                ? isDark ? 'bg-amber-900/30 border-amber-800' : 'bg-amber-50 border-amber-100'
+                : tip.type === 'success' 
+                  ? isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100'
+                  : isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-white border-slate-100';
+              const iconColor = tip.type === 'warning' ? 'text-amber-500' 
+                             : tip.type === 'success' ? 'text-emerald-500'
+                             : 'text-blue-500';
               return (
                 <div key={i} className={`p-4 rounded-xl border ${bgColor} flex gap-3 items-start`}>
-                  <div className={`p-2 rounded-lg bg-white shadow-sm ${iconColor}`}>
+                  <div className={`p-2 rounded-lg shadow-sm ${iconColor} ${isDark ? 'bg-slate-700' : 'bg-white'}`}>
                     <Icon size={16} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-slate-800 text-sm">{tip.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{tip.desc}</p>
+                    <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{tip.title}</p>
+                    <p className={`text-xs mt-0.5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tip.desc}</p>
                   </div>
                 </div>
               );
@@ -681,7 +693,7 @@ const MerchantInsights = () => {
       )}
 
       {/* Footer */}
-      <p className="text-center text-xs text-slate-400 pt-4">
+      <p className={`text-center text-xs pt-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
         Data refreshed {analytics?.meta?.generatedAt ? formatISTDisplay(toIST(analytics.meta.generatedAt), { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'recently'}
       </p>
 

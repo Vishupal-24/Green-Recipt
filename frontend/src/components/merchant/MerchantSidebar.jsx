@@ -233,8 +233,11 @@ import {
   ChevronRight,
   LogOut
 } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
+import ThemeToggle from '../common/ThemeToggle';
 
 const MerchantSidebar = ({ isOpen, onClose }) => {
+  const { isDark } = useTheme();
 
   // 🚪 Logout Logic
   const handleLogout = () => {
@@ -255,8 +258,12 @@ const MerchantSidebar = ({ isOpen, onClose }) => {
         className={({ isActive }) => `
           w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-300 ease-out group relative
           ${isActive 
-            ? 'bg-white text-emerald-700 shadow-md shadow-slate-200/50 scale-[1.02]' 
-            : 'text-slate-700 hover:bg-white hover:text-slate-800 hover:shadow-sm'}
+            ? isDark
+              ? 'bg-slate-800 text-emerald-400 shadow-lg shadow-black/20' 
+              : 'bg-white text-emerald-700 shadow-md shadow-slate-200/50 scale-[1.02]'
+            : isDark
+              ? 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
+              : 'text-slate-700 hover:bg-white hover:text-slate-800 hover:shadow-sm'}
         `}
       >
         {({ isActive }) => (
@@ -264,7 +271,9 @@ const MerchantSidebar = ({ isOpen, onClose }) => {
             {/* Icon Box */}
             <div className={`
                p-2 rounded-xl transition-colors duration-300
-               ${isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-transparent group-hover:bg-slate-50'}
+               ${isActive 
+                 ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                 : isDark ? 'bg-transparent group-hover:bg-slate-700' : 'bg-transparent group-hover:bg-slate-50'}
             `}>
               <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
             </div>
@@ -275,14 +284,16 @@ const MerchantSidebar = ({ isOpen, onClose }) => {
                 {label}
               </span>
               {subLabel && (
-                 <span className="text-[10px] font-medium opacity-65 block mt-0.5">
+                 <span className={`text-[10px] font-medium block mt-0.5 ${
+                   isDark ? 'opacity-50' : 'opacity-65'
+                 }`}>
                    {subLabel}
                  </span>
               )}
             </div>
 
             {/* Active Indicator Arrow */}
-            {isActive && <ChevronRight size={16} className="text-emerald-400 opacity-50" />}
+            {isActive && <ChevronRight size={16} className={`opacity-50 ${isDark ? 'text-emerald-400' : 'text-emerald-400'}`} />}
           </>
         )}
       </NavLink>
@@ -302,34 +313,55 @@ const MerchantSidebar = ({ isOpen, onClose }) => {
       {/* 🔹 SIDEBAR CONTAINER */}
       <aside className={`
         fixed inset-y-0 left-0 z-40 w-72 
-        bg-white/95 border-r border-slate-200 backdrop-blur-xl  
-        transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)
+        border-r backdrop-blur-xl  
+        transition-all duration-300 cubic-bezier(0.16, 1, 0.3, 1)
         flex flex-col h-full
         md:static md:translate-x-0 
         ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+        ${isDark 
+          ? 'bg-[#18181b]/95 border-slate-800' 
+          : 'bg-white/95 border-slate-200'}
       `}>
         
         {/* HEADER / LOGO */}
         <div className="h-24 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl shadow-slate-900/20">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-xl ${
+              isDark 
+                ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-emerald-500/20' 
+                : 'bg-slate-900 shadow-slate-900/20'
+            }`}>
               <Store size={20} />
             </div>
             <div>
-              <h1 className="font-black text-lg text-slate-900 tracking-tight leading-none">GreenReceipt</h1>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Merchant App</p>
+              <h1 className={`font-black text-lg tracking-tight leading-none ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>GreenReceipt</h1>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${
+                isDark ? 'text-slate-500' : 'text-slate-500'
+              }`}>Merchant App</p>
             </div>
           </div>
           
-          {/* Close Button (Mobile) */}
-          <button onClick={onClose} className="md:hidden p-2 text-slate-500 hover:bg-white hover:shadow-sm rounded-full transition-all">
-            <X size={20} />
-          </button>
+          {/* Theme Toggle & Close Button */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle size="small" />
+            {/* Close Button (Mobile) */}
+            <button onClick={onClose} className={`md:hidden p-2 rounded-full transition-all ${
+              isDark 
+                ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200' 
+                : 'text-slate-500 hover:bg-white hover:shadow-sm'
+            }`}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* NAVIGATION LIST */}
         <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-4 no-scrollbar">
-          <p className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 mt-2">Main Menu</p>
+          <p className={`px-4 text-[10px] font-black uppercase tracking-widest mb-3 mt-2 ${
+            isDark ? 'text-slate-500' : 'text-slate-600'
+          }`}>Main Menu</p>
           
           {/* 👇 UPDATED LINKS: Pointing to real routes now */}
           <NavItem to="/merchant/overview" icon={LayoutDashboard} label="Overview" subLabel="Dashboard" />

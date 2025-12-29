@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Import Components
 import MerchantSidebar from '../components/merchant/MerchantSidebar'; 
@@ -104,10 +105,10 @@ const MerchantDashboard = () => {
   // Show loading while checking profile
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0f0f12] transition-colors duration-300">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500">Loading...</p>
+          <p className="text-slate-500 dark:text-slate-400">Loading...</p>
         </div>
       </div>
     );
@@ -122,7 +123,7 @@ const MerchantDashboard = () => {
   const isBillingPage = location.pathname.includes('billing');
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#0f0f12] font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-300">
       
       {/* 🖥️ DESKTOP: Sidebar (Hidden on Mobile) */}
       <div className="hidden md:flex h-full">
@@ -130,10 +131,10 @@ const MerchantDashboard = () => {
       </div>
 
       {/* ⚪ MAIN CONTENT AREA */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative dark-ambient">
         
         {/* Scrollable Content */}
-        <main className={`flex-1 overflow-y-auto p-4 md:p-8 ${!isBillingPage ? 'pb-24 md:pb-8' : ''}`}>
+        <main className={`flex-1 overflow-y-auto p-4 md:p-8 ${!isBillingPage ? 'pb-24 md:pb-8' : ''} relative z-10`}>
             <div className="max-w-6xl mx-auto">
                 
                 <Routes>

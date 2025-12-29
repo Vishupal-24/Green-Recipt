@@ -7,6 +7,8 @@ import CustomerCalendar from '../components/customer/CustomerCalendar';
 import CustomerInsights from '../components/customer/CustomerInsights';
 import CustomerProfile from '../components/customer/CustomerProfile';
 import CustomerNotifications from '../components/customer/CustomerNotifications';
+import ThemeToggle from '../components/common/ThemeToggle';
+import { useTheme } from '../contexts/ThemeContext';
 import { ScanLine, Bell, X, CheckCircle, AlertCircle, Smartphone, Banknote, Clock, ShoppingBag } from 'lucide-react';
 import { createReceipt, claimReceipt, fetchCustomerReceipts } from '../services/api';
 
@@ -171,8 +173,14 @@ const CustomerDashboard = () => {
     }, 1500);
   };
 
+  const { isDark } = useTheme();
+
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
+    <div className={`flex h-screen font-sans overflow-hidden transition-colors duration-300 ${
+      isDark 
+        ? 'bg-[#0f0f12] text-slate-100' 
+        : 'bg-slate-50 text-slate-900'
+    }`}>
       <CustomerSidebar
         activeTab={activeTab}
         onNavigate={setActiveTab}
@@ -181,29 +189,46 @@ const CustomerDashboard = () => {
 
       <div className="flex-1 flex flex-col min-w-0 h-full relative">
         {/* MOBILE HEADER */}
-        <div className="md:hidden h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 shrink-0 sticky top-0 z-30 shadow-sm">
+        <div className={`md:hidden h-16 border-b flex items-center justify-between px-4 shrink-0 sticky top-0 z-30 transition-colors duration-300 ${
+          isDark 
+            ? 'bg-[#18181b]/95 backdrop-blur-xl border-slate-800 shadow-lg shadow-black/20' 
+            : 'bg-white/95 backdrop-blur-xl border-slate-100 shadow-sm'
+        }`}>
           <button
             onClick={handleGlobalScan}
-            className="p-2 bg-slate-50 text-slate-600 rounded-full hover:bg-slate-100 active:scale-95 transition-all"
+            className={`p-2 rounded-full active:scale-95 transition-all ${
+              isDark 
+                ? 'bg-slate-800 text-emerald-400 hover:bg-slate-700' 
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+            }`}
           >
             <ScanLine size={22} />
           </button>
           <h1 className="text-xl font-extrabold tracking-tight">
-            <span className="text-emerald-600">Green</span>
-            <span className="text-slate-800">Receipt</span>
+            <span className="text-emerald-500">Green</span>
+            <span className={isDark ? 'text-white' : 'text-slate-800'}>Receipt</span>
           </h1>
-          <button
-            onClick={() => setActiveTab("notifications")}
-            className="p-2 bg-slate-50 text-slate-600 rounded-full hover:bg-slate-100 active:scale-95 transition-all relative"
-          >
-            <Bell size={22} />
-            <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle size="small" />
+            <button
+              onClick={() => setActiveTab("notifications")}
+              className={`p-2 rounded-full active:scale-95 transition-all relative ${
+                isDark 
+                  ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' 
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              <Bell size={22} />
+              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-800"></span>
+            </button>
+          </div>
         </div>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8">
-          <div className="max-w-4xl mx-auto animate-fade-in">
+        <main className={`flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 ${
+          isDark ? 'dark-ambient' : ''
+        }`}>
+          <div className="max-w-4xl mx-auto animate-fade-in relative z-10">
             {activeTab === "home" && (
               <CustomerHome
                 onNavigate={setActiveTab}

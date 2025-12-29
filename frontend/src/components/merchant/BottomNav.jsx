@@ -167,19 +167,30 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, BarChart3, Plus, Package, FileClock } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const BottomNav = () => {
+  const { isDark } = useTheme();
+  
   // Standard Nav Item Style (Gray)
   const navClass = ({ isActive }) => 
     `flex flex-1 flex-col items-center justify-center gap-1 h-full transition-colors duration-200 ${
-      isActive ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'
+      isActive 
+        ? 'text-emerald-500' 
+        : isDark 
+          ? 'text-slate-500 hover:text-slate-300' 
+          : 'text-slate-400 hover:text-slate-600'
     }`;
 
   // Center Button Style (Highlighted but Contained)
   const centerBtnClass = "flex flex-col items-center justify-center h-full w-full";
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 h-[65px] px-2 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex justify-between items-center md:hidden pb-safe">
+    <div className={`fixed bottom-0 left-0 right-0 border-t h-[65px] px-2 z-50 flex justify-between items-center md:hidden pb-safe transition-colors duration-300 ${
+      isDark 
+        ? 'bg-[#18181b]/95 backdrop-blur-xl border-slate-800 shadow-[0_-4px_20px_rgba(0,0,0,0.3)]' 
+        : 'bg-white/95 backdrop-blur-xl border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]'
+    }`}>
       
       {/* 1. HOME */}
       <NavLink to="/merchant/overview" className={navClass}>
@@ -197,11 +208,17 @@ const BottomNav = () => {
       <div className="flex flex-1 items-center justify-center h-full relative">
         <NavLink to="/merchant/billing" className={centerBtnClass}>
             {/* The Green Highlight Circle */}
-            <div className="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center shadow-md shadow-emerald-200 active:scale-95 transition-transform">
+            <div className={`w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center active:scale-95 transition-all ${
+              isDark 
+                ? 'shadow-lg shadow-emerald-500/30' 
+                : 'shadow-md shadow-emerald-200'
+            }`}>
                 <Plus strokeWidth={3} className="w-6 h-6 text-white" />
             </div>
             {/* Optional: Label below */}
-            <span className="text-[10px] font-bold text-emerald-700 mt-1">Bill</span>
+            <span className={`text-[10px] font-bold mt-1 ${
+              isDark ? 'text-emerald-400' : 'text-emerald-700'
+            }`}>Bill</span>
         </NavLink>
       </div>
 

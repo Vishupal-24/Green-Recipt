@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { QrCode, Image, X, Calendar, Receipt, Trash2, CreditCard, Smartphone, EyeOff, CheckCircle, Check, Banknote, Loader2, ChevronRight, Clock, Store, ShoppingBag, MapPin, Phone } from 'lucide-react';
 import { deleteReceipt as deleteReceiptApi } from '../../services/api';
+import { useTheme } from '../../contexts/ThemeContext';
 
-const ReceiptCard = ({ data, onDelete, onUpdate }) => {
+const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
+  const { isDark: themeIsDark } = useTheme();
+  const isDark = propIsDark !== undefined ? propIsDark : themeIsDark;
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   // Customer's selected intent (informational only - does NOT update database)
@@ -57,14 +60,16 @@ const ReceiptCard = ({ data, onDelete, onUpdate }) => {
       {/* ========== CARD VIEW ========== */}
       <div 
         onClick={() => setIsOpen(true)}
-        className={`bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]
-          ${data.excludeFromStats ? 'border-slate-200 opacity-70' : 'border-slate-100'}
+        className={`p-3 md:p-4 rounded-xl md:rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer group active:scale-[0.99]
+          ${data.excludeFromStats ? isDark ? 'border-slate-600 opacity-70' : 'border-slate-200 opacity-70' : isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}
         `}
       >
         <div className="flex items-center gap-3">
           {/* Icon */}
           <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${
-            isQR ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'
+            isQR 
+              ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-600'
+              : isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600'
           }`}>
             {isQR ? <QrCode size={18} className="md:w-5 md:h-5" /> : <Image size={18} className="md:w-5 md:h-5" />}
           </div>
@@ -72,16 +77,16 @@ const ReceiptCard = ({ data, onDelete, onUpdate }) => {
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-800 text-sm md:text-base truncate">{data.merchant}</h3>
-              {data.excludeFromStats && <EyeOff size={12} className="text-slate-400 shrink-0" />}
+              <h3 className={`font-bold text-sm md:text-base truncate ${isDark ? 'text-white' : 'text-slate-800'}`}>{data.merchant}</h3>
+              {data.excludeFromStats && <EyeOff size={12} className={isDark ? 'text-slate-500 shrink-0' : 'text-slate-400 shrink-0'} />}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-[10px] md:text-xs text-slate-400 flex items-center gap-1">
+              <p className={`text-[10px] md:text-xs flex items-center gap-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 <Calendar size={10} className="md:w-3 md:h-3" />
                 {data.date} • {data.time}
               </p>
               {isPaid && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${paymentInfo.bg} ${paymentInfo.color}`}>
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${isDark ? 'bg-opacity-30' : ''} ${paymentInfo.bg} ${paymentInfo.color}`}>
                   <paymentInfo.icon size={10} />
                   {paymentInfo.label}
                 </span>
@@ -91,9 +96,11 @@ const ReceiptCard = ({ data, onDelete, onUpdate }) => {
           
           {/* Amount & Type */}
           <div className="text-right shrink-0">
-            <p className="font-bold text-slate-800 text-base md:text-lg">₹{data.amount}</p>
+            <p className={`font-bold text-base md:text-lg ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{data.amount}</p>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
-              isQR ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'
+              isQR 
+                ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                : isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-600'
             }`}>
               {isQR ? 'Digital' : 'Upload'}
             </span>

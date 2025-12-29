@@ -10,45 +10,46 @@ import {
 import { fetchCustomerReceipts, createReceipt, fetchCustomerAnalytics } from '../../services/api';
 import toast from 'react-hot-toast';
 import { getTodayIST, formatISTDateDisplay } from '../../utils/timezone';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ============== SKELETON LOADER ==============
-const HomeSkeleton = () => (
+const HomeSkeleton = ({ isDark }) => (
   <div className="space-y-6 animate-pulse">
-    <div className="h-8 bg-slate-200 rounded-lg w-48" />
-    <div className="h-44 bg-gradient-to-r from-slate-200 to-slate-300 rounded-3xl" />
+    <div className={`h-8 rounded-lg w-48 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+    <div className={`h-44 rounded-3xl ${isDark ? 'bg-gradient-to-r from-slate-700 to-slate-800' : 'bg-gradient-to-r from-slate-200 to-slate-300'}`} />
     <div className="grid grid-cols-2 gap-3">
-      <div className="h-24 bg-slate-200 rounded-2xl" />
-      <div className="h-24 bg-slate-200 rounded-2xl" />
+      <div className={`h-24 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+      <div className={`h-24 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
     </div>
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-slate-200 rounded-2xl" />)}
+      {[1, 2, 3, 4].map(i => <div key={i} className={`h-28 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />)}
     </div>
-    <div className="h-6 bg-slate-200 rounded w-32" />
-    {[1, 2, 3].map(i => <div key={i} className="h-20 bg-slate-200 rounded-2xl" />)}
+    <div className={`h-6 rounded w-32 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+    {[1, 2, 3].map(i => <div key={i} className={`h-20 rounded-2xl ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />)}
   </div>
 );
 
 // ============== STAT CARD ==============
-const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color = 'emerald' }) => {
+const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color = 'emerald', isDark }) => {
   const colorConfig = {
-    emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', border: 'border-emerald-100' },
-    blue: { bg: 'bg-blue-50', icon: 'text-blue-600', border: 'border-blue-100' },
-    purple: { bg: 'bg-purple-50', icon: 'text-purple-600', border: 'border-purple-100' },
-    orange: { bg: 'bg-orange-50', icon: 'text-orange-600', border: 'border-orange-100' },
-    amber: { bg: 'bg-amber-50', icon: 'text-amber-600', border: 'border-amber-100' },
-    slate: { bg: 'bg-slate-50', icon: 'text-slate-600', border: 'border-slate-100' },
+    emerald: { bg: isDark ? 'bg-emerald-900/30' : 'bg-emerald-50', icon: isDark ? 'text-emerald-400' : 'text-emerald-600', border: isDark ? 'border-emerald-800' : 'border-emerald-100' },
+    blue: { bg: isDark ? 'bg-blue-900/30' : 'bg-blue-50', icon: isDark ? 'text-blue-400' : 'text-blue-600', border: isDark ? 'border-blue-800' : 'border-blue-100' },
+    purple: { bg: isDark ? 'bg-purple-900/30' : 'bg-purple-50', icon: isDark ? 'text-purple-400' : 'text-purple-600', border: isDark ? 'border-purple-800' : 'border-purple-100' },
+    orange: { bg: isDark ? 'bg-orange-900/30' : 'bg-orange-50', icon: isDark ? 'text-orange-400' : 'text-orange-600', border: isDark ? 'border-orange-800' : 'border-orange-100' },
+    amber: { bg: isDark ? 'bg-amber-900/30' : 'bg-amber-50', icon: isDark ? 'text-amber-400' : 'text-amber-600', border: isDark ? 'border-amber-800' : 'border-amber-100' },
+    slate: { bg: isDark ? 'bg-slate-700' : 'bg-slate-50', icon: isDark ? 'text-slate-300' : 'text-slate-600', border: isDark ? 'border-slate-600' : 'border-slate-100' },
   };
   const config = colorConfig[color] || colorConfig.emerald;
 
   return (
-    <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+    <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl border shadow-sm hover:shadow-md transition-all group ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
       <div className="flex items-start justify-between gap-2">
         <div className={`p-2 md:p-2.5 rounded-lg md:rounded-xl ${config.bg} ${config.border} border group-hover:scale-105 transition-transform`}>
           <Icon size={16} className={`${config.icon} md:w-[18px] md:h-[18px]`} />
         </div>
         {trend && (
           <div className={`flex items-center gap-0.5 text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 md:py-1 rounded-full ${
-            trend === 'up' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+            trend === 'up' ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-600' : isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-500'
           }`}>
             {trend === 'up' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
             <span>{trendValue}%</span>
@@ -56,9 +57,9 @@ const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color
         )}
       </div>
       <div className="mt-2 md:mt-3">
-        <p className="text-[9px] md:text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
-        <p className="text-lg md:text-2xl font-bold text-slate-800 mt-0.5 md:mt-1">{value}</p>
-        {subValue && <p className="text-[10px] md:text-xs text-slate-400 mt-0.5">{subValue}</p>}
+        <p className={`text-[9px] md:text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+        <p className={`text-lg md:text-2xl font-bold mt-0.5 md:mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{value}</p>
+        {subValue && <p className={`text-[10px] md:text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{subValue}</p>}
       </div>
     </div>
   );
@@ -66,6 +67,7 @@ const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color
 
 // ============== MAIN COMPONENT ==============
 const CustomerHome = ({ onNavigate, onScanTrigger }) => {
+  const { isDark } = useTheme();
   
   // 🟢 STATE
   const [receipts, setReceipts] = useState([]);
@@ -145,7 +147,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
   const fileInputRef = useRef(null);
   
   // Loading state
-  if (loading) return <HomeSkeleton />;
+  if (loading) return <HomeSkeleton isDark={isDark} />;
 
   // Computed values for display
   const summary = analytics?.summary;
@@ -218,11 +220,11 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
       {/* ========== HEADER ========== */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-3xl font-bold text-slate-800">Dashboard</h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-0.5 md:mt-1">Your spending at a glance</p>
+          <h1 className={`text-xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Dashboard</h1>
+          <p className={`text-xs md:text-sm mt-0.5 md:mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Your spending at a glance</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-[10px] md:text-xs text-slate-400 bg-slate-100 px-2 md:px-3 py-1 md:py-1.5 rounded-full">
+          <div className={`flex items-center gap-1 text-[10px] md:text-xs px-2 md:px-3 py-1 md:py-1.5 rounded-full ${isDark ? 'text-slate-300 bg-slate-700' : 'text-slate-400 bg-slate-100'}`}>
             <Sparkles size={10} className="text-emerald-500 md:w-3 md:h-3" />
             <span>{receipts.length} receipts</span>
           </div>
@@ -336,6 +338,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
           value={summary?.thisMonth?.count || receipts.length}
           subValue="This month"
           color="emerald" 
+          isDark={isDark}
         />
         <StatCard 
           icon={Target} 
@@ -343,6 +346,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
           value={`₹${summary?.thisMonth?.avgPerDay || Math.round(totalSpent / 30)}`}
           subValue="Daily average"
           color="blue" 
+          isDark={isDark}
         />
         <StatCard 
           icon={Clock} 
@@ -350,6 +354,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
           value={`₹${(summary?.lastWeek?.total || 0).toLocaleString('en-IN')}`}
           subValue={`${summary?.lastWeek?.count || 0} receipts`}
           color="purple" 
+          isDark={isDark}
         />
         <StatCard 
           icon={Zap} 
@@ -357,28 +362,29 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
           value={`₹${(summary?.thisMonth?.projectedTotal || 0).toLocaleString('en-IN')}`}
           subValue="End of month"
           color="orange" 
+          isDark={isDark}
         />
       </div>
 
       {/* ========== RECENT ACTIVITY ========== */}
       <div>
         <div className="flex justify-between items-center mb-3 md:mb-4">
-          <h3 className="font-bold text-slate-800 text-base md:text-lg">Recent Activity</h3>
+          <h3 className={`font-bold text-base md:text-lg ${isDark ? 'text-white' : 'text-slate-800'}`}>Recent Activity</h3>
           <button 
             onClick={() => onNavigate('receipts')} 
-            className="text-[10px] md:text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-0.5 md:gap-1 transition-colors"
+            className="text-[10px] md:text-xs font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-0.5 md:gap-1 transition-colors"
           >
             View All <ChevronRight size={12} className="md:w-[14px] md:h-[14px]" />
           </button>
         </div>
 
         {receipts.length === 0 ? (
-          <div className="bg-white p-6 md:p-8 rounded-xl md:rounded-2xl border border-slate-100 text-center">
-            <div className="w-12 md:w-16 h-12 md:h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-              <Receipt size={20} className="text-slate-400 md:w-6 md:h-6" />
+          <div className={`p-6 md:p-8 rounded-xl md:rounded-2xl border text-center ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
+            <div className={`w-12 md:w-16 h-12 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4 ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+              <Receipt size={20} className={`${isDark ? 'text-slate-500' : 'text-slate-400'} md:w-6 md:h-6`} />
             </div>
-            <p className="font-semibold text-slate-600 mb-1 text-sm md:text-base">No receipts yet</p>
-            <p className="text-xs md:text-sm text-slate-400">Scan a QR code or upload to get started</p>
+            <p className={`font-semibold mb-1 text-sm md:text-base ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>No receipts yet</p>
+            <p className={`text-xs md:text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Scan a QR code or upload to get started</p>
           </div>
         ) : (
           <div className="space-y-2 md:space-y-3">
@@ -388,6 +394,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
                 data={receipt} 
                 onDelete={() => handleDelete(receipt.id)} 
                 onUpdate={handleUpdate}
+                isDark={isDark}
               />
             ))}
           </div>
@@ -397,26 +404,26 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
       {/* ========== UPLOAD DETAILS MODAL ========== */}
       {pendingFile && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl md:rounded-3xl w-full max-w-sm shadow-2xl animate-[popIn_0.2s_ease-out] flex flex-col max-h-[90vh]">
+          <div className={`rounded-2xl md:rounded-3xl w-full max-w-sm shadow-2xl animate-[popIn_0.2s_ease-out] flex flex-col max-h-[90vh] ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
             
             {/* Modal Header */}
-            <div className="flex justify-between items-center p-4 md:p-5 border-b border-slate-100 shrink-0">
-              <h3 className="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
+            <div className={`flex justify-between items-center p-4 md:p-5 border-b shrink-0 ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+              <h3 className={`font-bold text-base md:text-lg flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 <ImageIcon size={18} className="text-blue-500 md:w-5 md:h-5"/> 
                 Add Receipt
               </h3>
               <button 
                 onClick={() => setPendingFile(null)} 
-                className="p-1.5 md:p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+                className={`p-1.5 md:p-2 rounded-full transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200'}`}
               >
-                <X size={16} className="md:w-[18px] md:h-[18px]"/>
+                <X size={16} className={`md:w-[18px] md:h-[18px] ${isDark ? 'text-slate-300' : ''}`}/>
               </button>
             </div>
 
             {/* Content */}
             <div className="overflow-y-auto flex-1 p-4 md:p-5">
               {/* Image Preview */}
-              <div className="aspect-[4/3] bg-slate-100 rounded-xl mb-4 md:mb-5 overflow-hidden border border-slate-200">
+              <div className={`aspect-[4/3] rounded-xl mb-4 md:mb-5 overflow-hidden border ${isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-100 border-slate-200'}`}>
                 <img src={pendingFile.url} alt="Preview" className="w-full h-full object-cover" />
               </div>
 
@@ -424,15 +431,15 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
                 
                 {/* Merchant Name */}
                 <div>
-                  <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1.5 md:mb-2">Merchant / Shop</label>
+                  <label className={`block text-[10px] md:text-xs font-bold uppercase mb-1.5 md:mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Merchant / Shop</label>
                   <div className="relative">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <Store className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={16} />
                     <input 
                       type="text" 
                       placeholder="e.g. Starbucks, Uber" 
                       value={manualMerchant}
                       onChange={(e) => setManualMerchant(e.target.value)}
-                      className="w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className={`w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 border rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all ${isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'bg-slate-50 border-slate-200 text-slate-800'}`}
                       required
                     />
                   </div>
@@ -440,16 +447,16 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
 
                 {/* Amount */}
                 <div>
-                  <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1.5 md:mb-2">Total Amount</label>
+                  <label className={`block text-[10px] md:text-xs font-bold uppercase mb-1.5 md:mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Amount</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-base md:text-lg">₹</span>
+                    <span className={`absolute left-3 top-1/2 -translate-y-1/2 font-bold text-base md:text-lg ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>₹</span>
                     <input 
                       type="number" 
                       inputMode="decimal"
                       placeholder="0.00" 
                       value={manualAmount}
                       onChange={(e) => setManualAmount(e.target.value)}
-                      className="w-full pl-8 md:pl-9 pr-4 py-2.5 md:py-3 bg-slate-50 border border-slate-200 rounded-xl text-base md:text-lg font-bold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className={`w-full pl-8 md:pl-9 pr-4 py-2.5 md:py-3 border rounded-xl text-base md:text-lg font-bold outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all ${isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' : 'bg-slate-50 border-slate-200 text-slate-800'}`}
                       required
                     />
                   </div>
@@ -457,14 +464,14 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
 
                 {/* Date */}
                 <div>
-                  <label className="block text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-1.5 md:mb-2">Transaction Date</label>
+                  <label className={`block text-[10px] md:text-xs font-bold uppercase mb-1.5 md:mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Transaction Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                    <Calendar className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={16} />
                     <input 
                       type="date" 
                       value={manualDate}
                       onChange={(e) => setManualDate(e.target.value)}
-                      className="w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full"
+                      className={`w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 border rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                       required
                     />
                   </div>
@@ -475,22 +482,26 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
                   onClick={() => setIncludeInStats(!includeInStats)}
                   className={`p-3 md:p-4 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
                     includeInStats 
-                      ? 'bg-emerald-50 border-emerald-200 shadow-sm' 
-                      : 'bg-slate-50 border-slate-200'
+                      ? isDark ? 'bg-emerald-900/30 border-emerald-800 shadow-sm' : 'bg-emerald-50 border-emerald-200 shadow-sm'
+                      : isDark ? 'bg-slate-700 border-slate-600' : 'bg-slate-50 border-slate-200'
                   }`}
                 >
                   <div className={`w-5 md:w-6 h-5 md:h-6 rounded-lg flex items-center justify-center border-2 transition-all ${
                     includeInStats 
                       ? 'bg-emerald-500 border-emerald-500' 
-                      : 'bg-white border-slate-300'
+                      : isDark ? 'bg-slate-600 border-slate-500' : 'bg-white border-slate-300'
                   }`}>
                     {includeInStats && <CheckCircle size={12} className="text-white md:w-[14px] md:h-[14px]" />}
                   </div>
                   <div className="flex-1">
-                    <p className={`text-xs md:text-sm font-bold ${includeInStats ? 'text-emerald-800' : 'text-slate-600'}`}>
+                    <p className={`text-xs md:text-sm font-bold ${
+                      includeInStats 
+                        ? isDark ? 'text-emerald-400' : 'text-emerald-800'
+                        : isDark ? 'text-slate-300' : 'text-slate-600'
+                    }`}>
                       Include in Analytics
                     </p>
-                    <p className="text-[10px] md:text-xs text-slate-400 mt-0.5">Track in spending charts</p>
+                    <p className={`text-[10px] md:text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Track in spending charts</p>
                   </div>
                 </div>
 

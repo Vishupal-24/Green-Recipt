@@ -7,29 +7,34 @@ import {
 } from 'lucide-react';
 import { fetchCustomerAnalytics } from '../../services/api';
 import { formatISTDisplay, toIST } from '../../utils/timezone';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // ============== SKELETON LOADER ==============
-const InsightsSkeleton = () => (
-  <div className="max-w-2xl mx-auto space-y-6 pb-20 animate-pulse">
-    <div className="h-8 bg-slate-200 rounded w-48" />
-    <div className="grid grid-cols-2 gap-4">
-      <div className="h-32 bg-slate-200 rounded-2xl" />
-      <div className="h-32 bg-slate-200 rounded-2xl" />
+const InsightsSkeleton = () => {
+  const { isDark } = useTheme();
+  return (
+    <div className="max-w-2xl mx-auto space-y-6 pb-20 animate-pulse">
+      <div className={`h-8 rounded w-48 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+      <div className="grid grid-cols-2 gap-4">
+        <div className={`h-32 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+        <div className={`h-32 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+      </div>
+      <div className={`h-48 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+      <div className={`h-64 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+      <div className={`h-48 rounded-2xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
     </div>
-    <div className="h-48 bg-slate-200 rounded-2xl" />
-    <div className="h-64 bg-slate-200 rounded-2xl" />
-    <div className="h-48 bg-slate-200 rounded-2xl" />
-  </div>
-);
+  );
+};
 
 // ============== MINI CHART COMPONENT ==============
 const MiniBarChart = ({ data, height = 60, color = 'emerald' }) => {
+  const { isDark } = useTheme();
   if (!data || data.length === 0) return null;
   const max = Math.max(...data.map(d => d.value), 1);
   const colorClass = {
-    emerald: 'bg-emerald-500',
-    blue: 'bg-blue-500',
-    purple: 'bg-purple-500',
+    emerald: isDark ? 'bg-emerald-500' : 'bg-emerald-500',
+    blue: isDark ? 'bg-blue-500' : 'bg-blue-500',
+    purple: isDark ? 'bg-purple-500' : 'bg-purple-500',
   }[color] || 'bg-emerald-500';
 
   return (
@@ -41,7 +46,9 @@ const MiniBarChart = ({ data, height = 60, color = 'emerald' }) => {
           style={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
           title={`${d.label}: ₹${d.value}`}
         >
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+          <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 ${
+            isDark ? 'bg-slate-700' : 'bg-slate-800'
+          }`}>
             {d.label}: ₹{d.value}
           </div>
         </div>
@@ -92,32 +99,37 @@ const DonutChart = ({ segments, size = 120, strokeWidth = 16 }) => {
 
 // ============== STAT CARD ==============
 const StatCard = ({ icon: Icon, label, value, subValue, trend, trendValue, color = 'emerald', className = '' }) => {
+  const { isDark } = useTheme();
   const colorClasses = {
-    emerald: 'bg-emerald-50 text-emerald-600 border-emerald-100',
-    blue: 'bg-blue-50 text-blue-600 border-blue-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100',
-    orange: 'bg-orange-50 text-orange-600 border-orange-100',
-    slate: 'bg-slate-50 text-slate-600 border-slate-100',
+    emerald: isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    blue: isDark ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-blue-50 text-blue-600 border-blue-100',
+    purple: isDark ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-purple-50 text-purple-600 border-purple-100',
+    orange: isDark ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-orange-50 text-orange-600 border-orange-100',
+    slate: isDark ? 'bg-slate-700/50 text-slate-400 border-slate-600' : 'bg-slate-50 text-slate-600 border-slate-100',
   };
   const iconBg = colorClasses[color] || colorClasses.emerald;
 
   return (
-    <div className={`bg-white p-4 rounded-2xl border border-slate-100 shadow-sm ${className}`}>
+    <div className={`p-4 rounded-2xl border shadow-sm transition-colors duration-300 ${
+      isDark 
+        ? 'bg-slate-800/50 border-slate-700/50' 
+        : 'bg-white border-slate-100'
+    } ${className}`}>
       <div className="flex items-start justify-between">
         <div className={`p-2 rounded-xl ${iconBg}`}>
           <Icon size={18} />
         </div>
         {trend && (
-          <div className={`flex items-center gap-0.5 text-xs font-bold ${trend === 'up' ? 'text-emerald-600' : 'text-red-500'}`}>
+          <div className={`flex items-center gap-0.5 text-xs font-bold ${trend === 'up' ? 'text-emerald-500' : 'text-red-500'}`}>
             {trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
             {trendValue}%
           </div>
         )}
       </div>
       <div className="mt-3">
-        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{label}</p>
-        <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
-        {subValue && <p className="text-xs text-slate-400 mt-0.5">{subValue}</p>}
+        <p className={`text-xs font-medium uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{label}</p>
+        <p className={`text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>{value}</p>
+        {subValue && <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{subValue}</p>}
       </div>
     </div>
   );
@@ -176,6 +188,7 @@ const getPaymentIcon = (method) => {
 
 // ============== MAIN COMPONENT ==============
 const CustomerInsights = () => {
+  const { isDark } = useTheme();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -293,26 +306,34 @@ const CustomerInsights = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Insights</h2>
-          <p className="text-sm text-slate-500 mt-0.5">Your spending analytics</p>
+          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Insights</h2>
+          <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Your spending analytics</p>
         </div>
         <button 
           onClick={() => loadAnalytics(true)}
           disabled={refreshing}
-          className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+          className={`p-2.5 border rounded-xl transition-colors disabled:opacity-50 ${
+            isDark 
+              ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300' 
+              : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-600'
+          }`}
         >
-          <RefreshCw size={18} className={`text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+        <div className={`flex items-center gap-2 p-4 rounded-xl border text-sm ${
+          isDark 
+            ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' 
+            : 'border-amber-200 bg-amber-50 text-amber-800'
+        }`}>
           <AlertTriangle size={18} /> {error}
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 bg-slate-100 p-1 rounded-xl">
+      <div className={`flex gap-2 p-1 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-slate-100'}`}>
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
           { id: 'categories', label: 'Categories', icon: PieChart },
@@ -323,8 +344,12 @@ const CustomerInsights = () => {
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
               activeTab === tab.id 
-                ? 'bg-white text-emerald-600 shadow-sm' 
-                : 'text-slate-500 hover:text-slate-700'
+                ? isDark
+                  ? 'bg-slate-700 text-emerald-400 shadow-sm' 
+                  : 'bg-white text-emerald-600 shadow-sm'
+                : isDark
+                  ? 'text-slate-400 hover:text-slate-300'
+                  : 'text-slate-500 hover:text-slate-700'
             }`}
           >
             <tab.icon size={16} />
@@ -403,38 +428,38 @@ const CustomerInsights = () => {
 
           {/* Mini Spending Chart */}
           {chartData.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Daily Spending</h3>
-                <span className="text-xs text-slate-400">Last 14 days</span>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Daily Spending</h3>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Last 14 days</span>
               </div>
-              <MiniBarChart data={chartData} height={80} color="emerald" />
+              <MiniBarChart data={chartData} height={80} color="emerald" isDark={isDark} />
             </div>
           )}
 
           {/* Top Merchants */}
           {topMerchants?.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Favorite Merchants</h3>
-                <Store size={18} className="text-slate-400" />
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Favorite Merchants</h3>
+                <Store size={18} className={isDark ? 'text-slate-500' : 'text-slate-400'} />
               </div>
               <div className="space-y-3">
                 {topMerchants.slice(0, 3).map((merchant, i) => {
                   const config = getCategoryConfig(merchant.businessCategory);
                   const Icon = config.icon;
                   return (
-                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                    <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 ${config.light} rounded-full flex items-center justify-center`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-600' : config.light}`}>
                           <Icon className={config.color} size={18} />
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-700 text-sm">{merchant.name}</p>
-                          <p className="text-xs text-slate-400">{merchant.visits} visits • {merchant.businessCategory || 'General'}</p>
+                          <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-700'}`}>{merchant.name}</p>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{merchant.visits} visits • {merchant.businessCategory || 'General'}</p>
                         </div>
                       </div>
-                      <p className="font-bold text-slate-800">₹{merchant.totalSpent.toLocaleString('en-IN')}</p>
+                      <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{merchant.totalSpent.toLocaleString('en-IN')}</p>
                     </div>
                   );
                 })}
@@ -449,22 +474,22 @@ const CustomerInsights = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Donut Chart */}
           {donutSegments.length > 0 && (
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="font-bold text-slate-700 mb-4">Spending Breakdown</h3>
+            <div className={`p-6 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
+              <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-700'}`}>Spending Breakdown</h3>
               <div className="flex items-center gap-6">
                 <div className="relative">
                   <DonutChart segments={donutSegments} size={140} strokeWidth={20} />
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <p className="text-xs text-slate-400">Total</p>
-                    <p className="text-lg font-bold text-slate-800">₹{(summary?.thisMonth?.total || 0).toLocaleString('en-IN')}</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>Total</p>
+                    <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{(summary?.thisMonth?.total || 0).toLocaleString('en-IN')}</p>
                   </div>
                 </div>
                 <div className="flex-1 space-y-2">
                   {donutSegments.map((seg, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: seg.color }} />
-                      <span className="text-sm text-slate-600 flex-1">{seg.label}</span>
-                      <span className="text-sm font-bold text-slate-700">{seg.percentage}%</span>
+                      <span className={`text-sm flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{seg.label}</span>
+                      <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>{seg.percentage}%</span>
                     </div>
                   ))}
                 </div>
@@ -473,33 +498,33 @@ const CustomerInsights = () => {
           )}
 
           {/* Category List */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-            <h3 className="font-bold text-slate-700 mb-4">Category Details</h3>
+          <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
+            <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-700'}`}>Category Details</h3>
             <div className="space-y-3">
               {(categories || []).length === 0 && (
-                <p className="text-sm text-slate-500 text-center py-4">No spending data yet</p>
+                <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No spending data yet</p>
               )}
               {(categories || []).map((cat, i) => {
                 const config = getCategoryConfig(cat.category);
                 const Icon = config.icon;
                 return (
-                  <div key={i} className="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div key={i} className={`p-4 rounded-xl border ${isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-100'}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${config.light}`}>
+                        <div className={`p-2 rounded-xl ${isDark ? 'bg-slate-600' : config.light}`}>
                           <Icon className={config.color} size={20} />
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-700">{cat.category}</p>
-                          <p className="text-xs text-slate-400">{cat.count} transactions • Avg ₹{cat.avgTransaction}</p>
+                          <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-700'}`}>{cat.category}</p>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{cat.count} transactions • Avg ₹{cat.avgTransaction}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-slate-800">₹{cat.totalSpent.toLocaleString('en-IN')}</p>
-                        <p className="text-xs text-slate-400">{cat.percentage}%</p>
+                        <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{cat.totalSpent.toLocaleString('en-IN')}</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{cat.percentage}%</p>
                       </div>
                     </div>
-                    <div className="mt-3 h-2 rounded-full bg-white border border-slate-200 overflow-hidden">
+                    <div className={`mt-3 h-2 rounded-full overflow-hidden border ${isDark ? 'bg-slate-600 border-slate-500' : 'bg-white border-slate-200'}`}>
                       <div 
                         className={`h-full ${config.bg} transition-all duration-500`} 
                         style={{ width: `${cat.percentage}%` }}
@@ -513,39 +538,39 @@ const CustomerInsights = () => {
 
           {/* Payment Methods */}
           {paymentMethods?.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="font-bold text-slate-700 mb-4">Payment Methods</h3>
+            <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
+              <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-700'}`}>Payment Methods</h3>
               
               {/* Payment Summary Cards - UPI vs Cash */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {/* UPI Card */}
-                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-100">
+                <div className={`p-4 rounded-xl border ${isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="p-2 bg-emerald-500 rounded-lg">
                       <Smartphone size={18} className="text-white" />
                     </div>
-                    <span className="font-bold text-emerald-800">UPI Payments</span>
+                    <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>UPI Payments</span>
                   </div>
-                  <p className="text-2xl font-bold text-emerald-700">
+                  <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
                     ₹{(paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.total || 0).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-xs text-emerald-600 mt-1">
+                  <p className={`text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                     {paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.count || 0} transactions
                   </p>
                 </div>
                 
                 {/* Cash Card */}
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 p-4 rounded-xl border border-amber-100">
+                <div className={`p-4 rounded-xl border ${isDark ? 'bg-amber-900/30 border-amber-800' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className="p-2 bg-amber-500 rounded-lg">
                       <Banknote size={18} className="text-white" />
                     </div>
-                    <span className="font-bold text-amber-800">Cash Payments</span>
+                    <span className={`font-bold ${isDark ? 'text-amber-400' : 'text-amber-800'}`}>Cash Payments</span>
                   </div>
-                  <p className="text-2xl font-bold text-amber-700">
+                  <p className={`text-2xl font-bold ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
                     ₹{(paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.total || 0).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-xs text-amber-600 mt-1">
+                  <p className={`text-xs mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
                     {paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.count || 0} transactions
                   </p>
                 </div>
@@ -561,13 +586,13 @@ const CustomerInsights = () => {
         <div className="space-y-6 animate-fade-in">
           {/* Monthly Trend */}
           {monthlyChartData.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Monthly Trend</h3>
-                <span className="text-xs text-slate-400">Last 6 months</span>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Monthly Trend</h3>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Last 6 months</span>
               </div>
-              <MiniBarChart data={monthlyChartData} height={100} color="blue" />
-              <div className="flex justify-between mt-2 text-xs text-slate-400">
+              <MiniBarChart data={monthlyChartData} height={100} color="blue" isDark={isDark} />
+              <div className={`flex justify-between mt-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {monthlyChartData.map((d, i) => (
                   <span key={i}>{d.label}</span>
                 ))}
@@ -597,24 +622,24 @@ const CustomerInsights = () => {
 
           {/* Top Items */}
           {topItems?.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+            <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-700">Top Purchases</h3>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Top Purchases</h3>
                 <Flame size={18} className="text-orange-500" />
               </div>
               <div className="space-y-2">
                 {topItems.slice(0, 5).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                  <div key={i} className={`flex items-center justify-between p-3 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-lg flex items-center justify-center text-xs font-bold text-emerald-700">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isDark ? 'bg-gradient-to-br from-emerald-600 to-emerald-700 text-emerald-100' : 'bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-700'}`}>
                         #{i + 1}
                       </div>
                       <div>
-                        <p className="font-medium text-slate-700 text-sm">{item.name}</p>
-                        <p className="text-xs text-slate-400">{item.quantity} qty • Avg ₹{item.avgPrice}</p>
+                        <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-700'}`}>{item.name}</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>{item.quantity} qty • Avg ₹{item.avgPrice}</p>
                       </div>
                     </div>
-                    <p className="font-bold text-slate-700">₹{item.totalSpent.toLocaleString('en-IN')}</p>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>₹{item.totalSpent.toLocaleString('en-IN')}</p>
                   </div>
                 ))}
               </div>
@@ -623,22 +648,22 @@ const CustomerInsights = () => {
 
           {/* Recent Activity */}
           {recentActivity?.length > 0 && (
-            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="font-bold text-slate-700 mb-4">Recent Activity</h3>
+            <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
+              <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-700'}`}>Recent Activity</h3>
               <div className="space-y-3">
                 {recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
-                      <Receipt size={18} className="text-slate-500" />
+                  <div key={i} className={`flex items-center gap-3 p-3 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${isDark ? 'bg-slate-600' : 'bg-white'}`}>
+                      <Receipt size={18} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-slate-700 text-sm truncate">{activity.merchant}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-slate-700'}`}>{activity.merchant}</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
                         {formatISTDisplay(toIST(activity.date), { day: 'numeric', month: 'short' })}
                         {' • '}{activity.category} • {activity.paymentMethod}
                       </p>
                     </div>
-                    <p className="font-bold text-slate-700">₹{activity.amount}</p>
+                    <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>₹{activity.amount}</p>
                   </div>
                 ))}
               </div>
@@ -649,28 +674,30 @@ const CustomerInsights = () => {
 
       {/* Smart Suggestions */}
       {suggestions.length > 0 && (
-        <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-5 rounded-2xl border border-slate-200">
+        <div className={`p-5 rounded-2xl border ${isDark ? 'bg-gradient-to-br from-slate-800 to-slate-800/50 border-slate-700' : 'bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-4">
             <Sparkles className="text-amber-500" size={20} />
-            <h3 className="font-bold text-slate-700">Smart Suggestions</h3>
+            <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-700'}`}>Smart Suggestions</h3>
           </div>
           <div className="space-y-3">
             {suggestions.map((tip, i) => {
               const Icon = tip.icon;
-              const bgColor = tip.type === 'warning' ? 'bg-amber-50 border-amber-100' 
-                           : tip.type === 'success' ? 'bg-emerald-50 border-emerald-100'
-                           : 'bg-white border-slate-100';
-              const iconColor = tip.type === 'warning' ? 'text-amber-600' 
-                             : tip.type === 'success' ? 'text-emerald-600'
-                             : 'text-blue-600';
+              const bgColor = tip.type === 'warning' 
+                ? isDark ? 'bg-amber-900/30 border-amber-800' : 'bg-amber-50 border-amber-100'
+                : tip.type === 'success' 
+                  ? isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-emerald-50 border-emerald-100'
+                  : isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-white border-slate-100';
+              const iconColor = tip.type === 'warning' ? 'text-amber-500' 
+                             : tip.type === 'success' ? 'text-emerald-500'
+                             : 'text-blue-500';
               return (
                 <div key={i} className={`p-4 rounded-xl border ${bgColor} flex gap-3 items-start`}>
-                  <div className={`p-2 rounded-lg bg-white shadow-sm ${iconColor}`}>
+                  <div className={`p-2 rounded-lg shadow-sm ${iconColor} ${isDark ? 'bg-slate-700' : 'bg-white'}`}>
                     <Icon size={16} />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-slate-800 text-sm">{tip.title}</p>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{tip.desc}</p>
+                    <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>{tip.title}</p>
+                    <p className={`text-xs mt-0.5 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{tip.desc}</p>
                   </div>
                 </div>
               );
@@ -680,7 +707,7 @@ const CustomerInsights = () => {
       )}
 
       {/* Footer Note */}
-      <p className="text-center text-xs text-slate-400 pt-4">
+      <p className={`text-center text-xs pt-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
         Data refreshed {analytics?.meta?.generatedAt ? formatISTDisplay(toIST(analytics.meta.generatedAt), { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'recently'}
       </p>
 
