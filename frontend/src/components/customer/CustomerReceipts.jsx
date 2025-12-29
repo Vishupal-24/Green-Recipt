@@ -1,21 +1,23 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MOCK_RECEIPTS } from './customerData';
 import ReceiptCard from './ReceiptCard';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Search, Filter, Inbox, Receipt, QrCode, Upload, X, ChevronDown, Check, Smartphone, Banknote, CreditCard, SlidersHorizontal, ArrowUpDown, Calendar } from 'lucide-react';
 import { fetchCustomerReceipts } from '../../services/api';
 
 // ============== SKELETON LOADER ==============
-const ReceiptsSkeleton = () => (
+const ReceiptsSkeleton = ({ isDark }) => (
   <div className="space-y-4 animate-pulse">
-    <div className="h-14 bg-slate-200 rounded-2xl" />
+    <div className={`h-14 rounded-2xl ${isDark ? 'bg-dark-card' : 'bg-slate-200'}`} />
     <div className="flex gap-2">
-      {[1, 2, 3].map(i => <div key={i} className="h-9 bg-slate-200 rounded-lg flex-1" />)}
+      {[1, 2, 3].map(i => <div key={i} className={`h-9 rounded-lg flex-1 ${isDark ? 'bg-dark-card' : 'bg-slate-200'}`} />)}
     </div>
-    {[1, 2, 3, 4].map(i => <div key={i} className="h-20 bg-slate-200 rounded-2xl" />)}
+    {[1, 2, 3, 4].map(i => <div key={i} className={`h-20 rounded-2xl ${isDark ? 'bg-dark-card' : 'bg-slate-200'}`} />)}
   </div>
 );
 
 const CustomerReceipts = () => {
+  const { isDark } = useTheme();
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -103,7 +105,7 @@ const CustomerReceipts = () => {
     return { total, digital, uploaded, count: filtered.length };
   }, [filtered]);
 
-  if (loading) return <ReceiptsSkeleton />;
+  if (loading) return <ReceiptsSkeleton isDark={isDark} />;
 
   return (
     <div className="max-w-3xl mx-auto space-y-4 md:space-y-5 pb-24 md:pb-10">
@@ -111,38 +113,42 @@ const CustomerReceipts = () => {
       {/* ========== HEADER ========== */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800">All Receipts</h1>
-          <p className="text-xs md:text-sm text-slate-500 mt-0.5">{stats.count} receipts • ₹{stats.total.toLocaleString('en-IN')} total</p>
+          <h1 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>All Receipts</h1>
+          <p className={`text-xs md:text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{stats.count} receipts • ₹{stats.total.toLocaleString('en-IN')} total</p>
         </div>
         <button 
           onClick={() => setShowFilters(!showFilters)}
-          className={`p-2 md:p-2.5 rounded-xl border transition-all ${showFilters ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+          className={`p-2 md:p-2.5 rounded-xl border transition-all ${showFilters 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-600' 
+            : isDark 
+              ? 'bg-dark-card border-dark-border text-slate-400 hover:bg-dark-surface' 
+              : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
         >
           <SlidersHorizontal size={18} />
         </button>
       </div>
 
       {/* ========== SEARCH & FILTERS ========== */}
-      <div className="bg-white p-3 md:p-4 rounded-xl md:rounded-2xl border border-slate-100 shadow-sm space-y-3">
+      <div className={`p-3 md:p-4 rounded-xl md:rounded-2xl border shadow-sm space-y-3 ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'}`}>
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18}/>
+          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={18}/>
           <input 
             type="text" 
             placeholder="Search by merchant name..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-10 py-2.5 md:py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+            className={`w-full pl-10 pr-10 py-2.5 md:py-3 border rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all ${isDark ? 'bg-dark-surface border-dark-border text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-800'}`}
           />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded-full">
-              <X size={14} className="text-slate-400" />
+            <button onClick={() => setSearch('')} className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full ${isDark ? 'hover:bg-dark-surface' : 'hover:bg-slate-200'}`}>
+              <X size={14} className={isDark ? 'text-slate-500' : 'text-slate-400'} />
             </button>
           )}
         </div>
         
         {/* Type Filter Tabs */}
-        <div className="flex gap-1.5 md:gap-2 bg-slate-100 p-1 md:p-1.5 rounded-lg md:rounded-xl">
+        <div className={`flex gap-1.5 md:gap-2 p-1 md:p-1.5 rounded-lg md:rounded-xl ${isDark ? 'bg-dark-surface' : 'bg-slate-100'}`}>
           {[
             { id: 'all', label: 'All', icon: Receipt, count: receipts.length },
             { id: 'qr', label: 'Digital', icon: QrCode, count: receipts.filter(r => r.type === 'qr').length },
@@ -153,14 +159,20 @@ const CustomerReceipts = () => {
               onClick={() => setFilter(type.id)}
               className={`flex-1 py-2 md:py-2.5 px-2 md:px-3 rounded-lg md:rounded-xl text-xs md:text-sm font-bold capitalize transition-all flex items-center justify-center gap-1.5 ${
                 filter === type.id 
-                  ? 'bg-white text-emerald-600 shadow-sm' 
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
+                  ? isDark 
+                    ? 'bg-dark-card text-emerald-400 shadow-sm' 
+                    : 'bg-white text-emerald-600 shadow-sm' 
+                  : isDark 
+                    ? 'text-slate-400 hover:text-slate-300 hover:bg-dark-card/50' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
               }`}
             >
               <type.icon size={14} className="hidden sm:block" />
               <span>{type.label}</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                filter === type.id ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'
+                filter === type.id 
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700' 
+                  : isDark ? 'bg-dark-border text-slate-400' : 'bg-slate-200 text-slate-500'
               }`}>{type.count}</span>
             </button>
           ))}
@@ -168,10 +180,10 @@ const CustomerReceipts = () => {
 
         {/* Advanced Filters (Collapsible) */}
         {showFilters && (
-          <div className="pt-3 border-t border-slate-100 space-y-3 animate-fade-in">
+          <div className={`pt-3 border-t space-y-3 animate-fade-in ${isDark ? 'border-dark-border' : 'border-slate-100'}`}>
             {/* Payment Method */}
             <div>
-              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-2 block">Payment Method</label>
+              <label className={`text-[10px] md:text-xs font-bold uppercase mb-2 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Payment Method</label>
               <div className="flex flex-wrap gap-2">
                 {[
                   { id: 'all', label: 'All', icon: null },
@@ -185,7 +197,9 @@ const CustomerReceipts = () => {
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                       paymentFilter === pm.id
                         ? 'bg-emerald-500 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        : isDark 
+                          ? 'bg-dark-surface text-slate-300 hover:bg-dark-border' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     {pm.icon && <pm.icon size={12} />}
@@ -197,7 +211,7 @@ const CustomerReceipts = () => {
 
             {/* Sort By */}
             <div>
-              <label className="text-[10px] md:text-xs font-bold text-slate-500 uppercase mb-2 block">Sort By</label>
+              <label className={`text-[10px] md:text-xs font-bold uppercase mb-2 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sort By</label>
               <div className="flex gap-2">
                 {[
                   { id: 'date', label: 'Latest First', icon: Calendar },
@@ -208,8 +222,10 @@ const CustomerReceipts = () => {
                     onClick={() => setSortBy(sort.id)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
                       sortBy === sort.id
-                        ? 'bg-slate-800 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? isDark ? 'bg-white text-slate-900' : 'bg-slate-800 text-white'
+                        : isDark 
+                          ? 'bg-dark-surface text-slate-300 hover:bg-dark-border' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
                     <sort.icon size={12} />
@@ -224,17 +240,17 @@ const CustomerReceipts = () => {
 
       {/* ========== QUICK STATS ========== */}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
-        <div className="bg-white p-3 md:p-4 rounded-xl border border-slate-100 text-center">
-          <p className="text-[10px] md:text-xs font-semibold text-slate-500 uppercase">Total</p>
-          <p className="text-base md:text-xl font-bold text-slate-800 mt-1">₹{stats.total.toLocaleString('en-IN')}</p>
+        <div className={`p-3 md:p-4 rounded-xl border text-center ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'}`}>
+          <p className={`text-[10px] md:text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total</p>
+          <p className={`text-base md:text-xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{stats.total.toLocaleString('en-IN')}</p>
         </div>
-        <div className="bg-emerald-50 p-3 md:p-4 rounded-xl border border-emerald-100 text-center">
-          <p className="text-[10px] md:text-xs font-semibold text-emerald-600 uppercase">Digital</p>
-          <p className="text-base md:text-xl font-bold text-emerald-700 mt-1">{stats.digital}</p>
+        <div className={`p-3 md:p-4 rounded-xl border text-center ${isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
+          <p className={`text-[10px] md:text-xs font-semibold uppercase ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Digital</p>
+          <p className={`text-base md:text-xl font-bold mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>{stats.digital}</p>
         </div>
-        <div className="bg-blue-50 p-3 md:p-4 rounded-xl border border-blue-100 text-center">
-          <p className="text-[10px] md:text-xs font-semibold text-blue-600 uppercase">Uploaded</p>
-          <p className="text-base md:text-xl font-bold text-blue-700 mt-1">{stats.uploaded}</p>
+        <div className={`p-3 md:p-4 rounded-xl border text-center ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
+          <p className={`text-[10px] md:text-xs font-semibold uppercase ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>Uploaded</p>
+          <p className={`text-base md:text-xl font-bold mt-1 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>{stats.uploaded}</p>
         </div>
       </div>
 
@@ -242,15 +258,15 @@ const CustomerReceipts = () => {
       <div className="space-y-2 md:space-y-3">
         {filtered.length === 0 ? (
           <div className="text-center py-12 md:py-16">
-            <div className="w-16 md:w-20 h-16 md:h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Inbox size={28} className="text-slate-300 md:w-8 md:h-8" />
+            <div className={`w-16 md:w-20 h-16 md:h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${isDark ? 'bg-dark-card' : 'bg-slate-100'}`}>
+              <Inbox size={28} className={`md:w-8 md:h-8 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
             </div>
-            <p className="font-semibold text-slate-600 mb-1">No receipts found</p>
-            <p className="text-sm text-slate-400">Try adjusting your filters or search</p>
+            <p className={`font-semibold mb-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>No receipts found</p>
+            <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Try adjusting your filters or search</p>
             {(search || filter !== 'all' || paymentFilter !== 'all') && (
               <button 
                 onClick={() => { setSearch(''); setFilter('all'); setPaymentFilter('all'); }}
-                className="mt-4 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-lg text-sm font-bold hover:bg-emerald-100 transition-colors"
+                className={`mt-4 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${isDark ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
               >
                 Clear all filters
               </button>

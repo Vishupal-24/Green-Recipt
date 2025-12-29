@@ -115,7 +115,7 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsOpen(false)}>
           <div 
-            className="bg-white w-full md:w-[420px] md:max-w-[90vw] rounded-t-3xl md:rounded-3xl shadow-2xl animate-slide-up md:animate-pop-in flex flex-col max-h-[90vh]"
+            className={`w-full md:w-[420px] md:max-w-[90vw] rounded-t-3xl md:rounded-3xl shadow-2xl animate-slide-up md:animate-pop-in flex flex-col max-h-[90vh] ${isDark ? 'bg-dark-card' : 'bg-white'}`}
             onClick={(e) => e.stopPropagation()}
           >
             
@@ -166,7 +166,7 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
 
             {/* Merchant Info Bar */}
             {(branding.address || branding.phone) && (
-              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+              <div className={`px-4 py-2.5 border-b flex flex-wrap gap-x-4 gap-y-1 text-xs ${isDark ? 'bg-dark-surface border-dark-border text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
                 {branding.address && (
                   <span className="flex items-center gap-1">
                     <MapPin size={12} style={{ color: brandColor }} />
@@ -186,13 +186,13 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
             <div className="p-4 md:p-6 overflow-y-auto flex-1">
               
               {/* Date & Status */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-dashed border-slate-200">
-                <div className="flex items-center gap-2 text-slate-500">
+              <div className={`flex items-center justify-between mb-4 pb-4 border-b border-dashed ${isDark ? 'border-dark-border' : 'border-slate-200'}`}>
+                <div className={`flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   <Calendar size={16} />
                   <span className="text-sm font-medium">{data.date} at {data.time}</span>
                 </div>
                 {isQR && (
-                  <span className="text-[10px] font-bold uppercase px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full flex items-center gap-1">
+                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full flex items-center gap-1 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
                     <CheckCircle size={10} /> Verified
                   </span>
                 )}
@@ -201,20 +201,20 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
               {/* Items or Image */}
               {isQR && data.items?.length > 0 ? (
                 <div className="mb-4">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                  <h4 className={`text-xs font-bold uppercase mb-3 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     <ShoppingBag size={14} /> Items
                   </h4>
-                  <div className="bg-slate-50 rounded-xl p-3 space-y-2">
+                  <div className={`rounded-xl p-3 space-y-2 ${isDark ? 'bg-dark-surface' : 'bg-slate-50'}`}>
                     {data.items.map((item, i) => {
                       const qty = item.qty || item.quantity || 1;
                       const price = item.price || item.unitPrice || 0;
                       return (
                         <div key={i} className="flex justify-between items-center text-sm">
                           <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 bg-white rounded-lg flex items-center justify-center text-xs font-bold text-slate-500 shadow-sm">{qty}x</span>
-                            <span className="text-slate-700">{item.name}</span>
+                            <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm ${isDark ? 'bg-dark-card text-slate-400' : 'bg-white text-slate-500'}`}>{qty}x</span>
+                            <span className={isDark ? 'text-slate-300' : 'text-slate-700'}>{item.name}</span>
                           </div>
-                          <span className="font-bold text-slate-800">₹{price * qty}</span>
+                          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>₹{price * qty}</span>
                         </div>
                       );
                     })}
@@ -222,10 +222,10 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
                 </div>
               ) : data.image && (
                 <div className="mb-4">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center gap-2">
+                  <h4 className={`text-xs font-bold uppercase mb-3 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                     <Image size={14} /> Receipt Image
                   </h4>
-                  <div className="aspect-[4/3] bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+                  <div className={`aspect-[4/3] rounded-xl overflow-hidden border ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-slate-100 border-slate-200'}`}>
                     <img src={data.image} alt="Receipt" className="w-full h-full object-cover" />
                   </div>
                 </div>
@@ -233,7 +233,7 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
 
               {/* Excluded Notice */}
               {data.excludeFromStats && (
-                <div className="mb-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3 text-slate-500">
+                <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 ${isDark ? 'bg-dark-surface text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
                   <EyeOff size={16} />
                   <span className="text-xs font-medium">Excluded from analytics</span>
                 </div>
@@ -242,18 +242,18 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
               {/* Amount */}
               <div 
                 className="rounded-xl p-4 mb-4 relative overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${brandColor}10 0%, ${brandColor}05 100%)` }}
+                style={{ background: isDark ? `linear-gradient(135deg, ${brandColor}20 0%, ${brandColor}10 100%)` : `linear-gradient(135deg, ${brandColor}10 0%, ${brandColor}05 100%)` }}
               >
                 <div 
                   className="absolute top-0 left-0 w-1 h-full rounded-l-xl"
                   style={{ backgroundColor: brandColor }}
                 />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold text-slate-500 uppercase">Total Amount</span>
+                  <span className={`text-sm font-bold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Amount</span>
                   <span className="text-3xl font-bold" style={{ color: brandColor }}>₹{data.amount}</span>
                 </div>
                 {isPaid && (
-                  <div className={`mt-3 pt-3 border-t border-slate-200 flex items-center gap-2 ${paymentInfo.color}`}>
+                  <div className={`mt-3 pt-3 border-t flex items-center gap-2 ${isDark ? 'border-dark-border' : 'border-slate-200'} ${paymentInfo.color}`}>
                     <paymentInfo.icon size={16} />
                     <span className="text-sm font-bold">Paid via {paymentInfo.label}</span>
                   </div>
@@ -264,9 +264,9 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
               {(branding.receiptFooter || data.footer) && (
                 <div 
                   className="text-center py-3 px-4 rounded-xl border border-dashed mb-4"
-                  style={{ borderColor: `${brandColor}40`, backgroundColor: `${brandColor}05` }}
+                  style={{ borderColor: `${brandColor}40`, backgroundColor: isDark ? `${brandColor}15` : `${brandColor}05` }}
                 >
-                  <p className="text-sm italic text-slate-600">
+                  <p className={`text-sm italic ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                     "{branding.receiptFooter || data.footer}"
                   </p>
                 </div>
@@ -274,11 +274,11 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
             </div>
 
             {/* Actions Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center gap-3 rounded-b-3xl md:rounded-b-3xl">
+            <div className={`p-4 border-t flex justify-between items-center gap-3 rounded-b-3xl md:rounded-b-3xl ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-slate-50 border-slate-100'}`}>
               <button 
                 onClick={handleDelete} 
                 disabled={isProcessing}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-red-200 text-red-600 rounded-xl text-sm font-bold hover:bg-red-50 transition-all disabled:opacity-50 shadow-sm"
+                className={`flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-bold transition-all disabled:opacity-50 shadow-sm ${isDark ? 'bg-dark-card border-red-500/30 text-red-400 hover:bg-red-500/10' : 'bg-white border-red-200 text-red-600 hover:bg-red-50'}`}
               >
                 {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 
                 <span className="hidden sm:inline">Delete</span>
@@ -291,14 +291,16 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
               ) : customerIntent ? (
                 // Customer has indicated payment intent - waiting for merchant confirmation
                 <div className="flex flex-col items-center gap-2">
-                  <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${customerIntent === 'UPI' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold ${customerIntent === 'UPI' 
+                    ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700' 
+                    : isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'}`}>
                     {customerIntent === 'UPI' ? <Smartphone size={16} /> : <Banknote size={16} />}
                     <span>Selected: {customerIntent}</span>
                   </div>
-                  <p className="text-xs text-slate-500 text-center">Waiting for merchant to confirm payment</p>
+                  <p className={`text-xs text-center ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>Waiting for merchant to confirm payment</p>
                   <button 
                     onClick={() => setCustomerIntent(null)}
-                    className="text-xs text-slate-400 hover:text-slate-600 underline"
+                    className={`text-xs underline ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
                   >
                     Change selection
                   </button>
@@ -306,7 +308,7 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
               ) : (
                 // Show payment intent options - does NOT update database
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs text-slate-500 text-center mb-1">Select payment method:</p>
+                  <p className={`text-xs text-center mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Select payment method:</p>
                   <div className="flex gap-2">
                     <button 
                       onClick={() => handlePaymentIntent('UPI')} 
@@ -323,7 +325,7 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
                       <span>Cash</span>
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-400 text-center mt-1">Merchant will confirm your payment</p>
+                  <p className={`text-[10px] text-center mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Merchant will confirm your payment</p>
                 </div>
               )}
             </div>

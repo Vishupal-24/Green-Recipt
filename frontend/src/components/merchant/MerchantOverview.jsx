@@ -362,9 +362,11 @@ import {
 } from "lucide-react";
 import { fetchMerchantReceipts } from "../../services/api";
 import { getNowIST } from "../../utils/timezone";
+import { useTheme } from "../../contexts/ThemeContext";
 
 const MerchantOverview = () => {
   // 👈 Removed unused 'onNavigate' prop
+  const { isDark } = useTheme();
 
   // 👇 2. Initialize Hook
   const navigate = useNavigate();
@@ -548,20 +550,20 @@ const MerchantOverview = () => {
     <div className="space-y-6 animate-fade-in max-w-6xl mx-auto pb-20">
       {/* NEW TOP BAR */}
       {/* NEW TOP BAR */}
-      <div className="flex md:hidden items-center justify-between py-2 mb-4 border-b border-slate-200">
+      <div className={`flex md:hidden items-center justify-between py-2 mb-4 border-b ${isDark ? 'border-dark-border' : 'border-slate-200'}`}>
         {/* 1. Invisible Spacer (Adjusted width to match new button size) */}
         <div className="w-9"></div>
 
         {/* 2. Center Title (Reduced text size slightly for proportion) */}
         <h1 className="text-lg font-extrabold tracking-tight">
           <span className="text-emerald-600">Green</span>
-          <span className="text-slate-800">Receipt</span>
+          <span className={isDark ? 'text-white' : 'text-slate-800'}>Receipt</span>
         </h1>
 
         {/* 3. Right Profile Button (Smaller: w-9 h-9) */}
         <button
           onClick={() => navigate("/merchant/profile")}
-          className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors active:scale-95"
+          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors active:scale-95 ${isDark ? 'bg-dark-card hover:bg-dark-surface text-slate-400' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
           aria-label="Profile"
         >
           {/* Increased strokeWidth makes the icon look sharper and less 'wireframe-like' */}
@@ -571,16 +573,16 @@ const MerchantOverview = () => {
       {/* Header */}
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">
+          <h2 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
             {getGreeting()}!
           </h2>
-          <p className="text-slate-500 text-sm">
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Here is what's happening today.
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs font-bold text-slate-400 uppercase">Today</p>
-          <p className="text-slate-800 font-medium">
+          <p className={`text-xs font-bold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Today</p>
+          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
             {new Date().toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -683,13 +685,13 @@ const MerchantOverview = () => {
       {/* Recent Activity & Trending */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Activity Feed */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <h3 className="font-bold text-slate-800 mb-6">
+        <div className={`lg:col-span-2 rounded-2xl border shadow-sm p-6 ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'}`}>
+          <h3 className={`font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-800'}`}>
             Recent Transactions (Today)
           </h3>
           <div className="space-y-4">
             {todaysBills.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">
+              <p className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 No sales yet today.
               </p>
             ) : (
@@ -697,10 +699,10 @@ const MerchantOverview = () => {
                 <div
                   key={index}
                   onClick={() => setViewingReceipt(bill)}
-                  className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border-b border-slate-50 last:border-0 cursor-pointer active:scale-95 group"
+                  className={`flex items-center justify-between p-3 rounded-xl transition-colors border-b last:border-0 cursor-pointer active:scale-95 group ${isDark ? 'hover:bg-dark-surface border-dark-border' : 'hover:bg-slate-50 border-slate-50'}`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isDark ? 'bg-dark-surface text-slate-400 group-hover:bg-emerald-500/20 group-hover:text-emerald-400' : 'bg-slate-100 text-slate-400 group-hover:bg-emerald-100 group-hover:text-emerald-600'}`}>
                       {bill.customerName ? (
                         <User size={18} />
                       ) : (
@@ -708,10 +710,10 @@ const MerchantOverview = () => {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-700 text-sm group-hover:text-emerald-700 transition-colors">
+                      <p className={`font-bold text-sm transition-colors ${isDark ? 'text-slate-200 group-hover:text-emerald-400' : 'text-slate-700 group-hover:text-emerald-700'}`}>
                         {bill.customerName || "Walk-in Customer"}
                       </p>
-                      <p className="text-xs text-slate-400 flex items-center gap-1">
+                      <p className={`text-xs flex items-center gap-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         <Clock size={10} /> {bill.time}
                         {bill.items?.length > 0 && (
                           <span className="ml-1">
@@ -723,10 +725,10 @@ const MerchantOverview = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="font-bold text-slate-800">
+                    <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
                       ₹{bill.total ?? bill.amount}
                     </span>
-                    <p className="text-[10px] text-slate-400 capitalize">
+                    <p className={`text-[10px] capitalize ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                       {bill.paymentMethod || "cash"}
                     </p>
                   </div>
@@ -737,9 +739,9 @@ const MerchantOverview = () => {
         </div>
 
         {/* Trending Items */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className={`rounded-2xl border shadow-sm p-6 ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'}`}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-slate-800">Trending Items</h3>
+            <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Trending Items</h3>
             <div className="flex items-center gap-1 text-orange-500">
               <Flame size={16} />
               <span className="text-xs font-bold">This Week</span>
@@ -747,24 +749,24 @@ const MerchantOverview = () => {
           </div>
           <div className="space-y-5">
             {trendingItems.length === 0 ? (
-              <p className="text-slate-400 text-center py-4 text-sm">
+              <p className={`text-center py-4 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 No sales data yet
               </p>
             ) : (
               trendingItems.map((item, i) => (
                 <div key={i}>
-                  <div className="flex justify-between text-xs font-bold text-slate-600 mb-1.5">
+                  <div className={`flex justify-between text-xs font-bold mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                     <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold">
+                      <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isDark ? 'bg-dark-surface' : 'bg-slate-100'}`}>
                         {i + 1}
                       </span>
                       {item.name}
                     </span>
-                    <span className="text-slate-500">
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>
                       {item.count} sold • ₹{item.revenue}
                     </span>
                   </div>
-                  <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className={`h-2.5 w-full rounded-full overflow-hidden ${isDark ? 'bg-dark-surface' : 'bg-slate-100'}`}>
                     <div
                       className={`h-full ${item.color} rounded-full transition-all duration-700`}
                       style={{ width: `${item.percentage}%` }}
@@ -787,7 +789,7 @@ const MerchantOverview = () => {
             onClick={() => setViewingReceipt(null)}
           ></div>
           {/* Actual Card */}
-          <div className="bg-slate-50 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative z-10 animate-[popIn_0.2s_ease-out]">
+          <div className={`w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative z-10 animate-[popIn_0.2s_ease-out] ${isDark ? 'bg-dark-card' : 'bg-slate-50'}`}>
             {/* Header */}
             <div
               className="text-white p-4 flex justify-between items-center relative overflow-hidden"
@@ -810,24 +812,24 @@ const MerchantOverview = () => {
               </button>
             </div>
             {/* Body */}
-            <div className="p-6 max-h-[70vh] overflow-y-auto bg-white m-4 rounded-xl shadow-sm border border-slate-200">
-              <h2 className="text-xl font-bold text-center mb-4">
+            <div className={`p-6 max-h-[70vh] overflow-y-auto m-4 rounded-xl shadow-sm border ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-white border-slate-200'}`}>
+              <h2 className={`text-xl font-bold text-center mb-4 ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {viewingReceipt.merchant}
               </h2>
               <div className="space-y-3 mb-4">
                 {viewingReceipt.items &&
                   viewingReceipt.items.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span className="text-slate-600">
+                      <span className={isDark ? 'text-slate-300' : 'text-slate-600'}>
                         {item.q || item.qty || 1} x {item.n || item.name}
                       </span>
-                      <span className="font-bold text-slate-800">
+                      <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
                         ₹{(item.p || item.price) * (item.q || item.qty || 1)}
                       </span>
                     </div>
                   ))}
               </div>
-              <div className="border-t pt-4 flex justify-between font-bold">
+              <div className={`border-t pt-4 flex justify-between font-bold ${isDark ? 'border-dark-border text-white' : 'text-slate-800'}`}>
                 <span>TOTAL</span>
                 <span>₹{viewingReceipt.total || viewingReceipt.amount}</span>
               </div>
