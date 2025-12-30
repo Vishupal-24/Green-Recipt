@@ -359,8 +359,9 @@ import {
   Smartphone,
   Banknote,
   Wallet,
+  Trash2,
 } from "lucide-react";
-import { fetchMerchantReceipts } from "../../services/api";
+import { fetchMerchantReceipts, deleteReceipt as deleteReceiptApi } from "../../services/api";
 import { getNowIST } from "../../utils/timezone";
 import { useTheme } from "../../contexts/ThemeContext";
 
@@ -374,6 +375,7 @@ const MerchantOverview = () => {
   // 🟢 STATE
   const [sales, setSales] = useState([]);
   const [viewingReceipt, setViewingReceipt] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load from backend with local fallback
   useEffect(() => {
@@ -396,6 +398,28 @@ const MerchantOverview = () => {
       mounted = false;
     };
   }, []);
+
+  const handleDeleteReceipt = async () => {
+    if (!viewingReceipt) return;
+    const confirmed = window.confirm("Delete this bill? This cannot be undone.");
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteReceiptApi(viewingReceipt.id || viewingReceipt._id);
+      const updated = sales.filter(
+        (r) => (r.id || r._id) !== (viewingReceipt.id || viewingReceipt._id)
+      );
+      setSales(updated);
+      localStorage.setItem("merchantSales", JSON.stringify(updated));
+      setViewingReceipt(null);
+    } catch (error) {
+      console.error("Delete receipt failed", error);
+      alert("Failed to delete bill. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Helpers to avoid crashes on bad data
   const toValidDate = (input) => {
@@ -832,6 +856,15 @@ const MerchantOverview = () => {
               <div className={`border-t pt-4 flex justify-between font-bold ${isDark ? 'border-dark-border text-white' : 'text-slate-800'}`}>
                 <span>TOTAL</span>
                 <span>₹{viewingReceipt.total || viewingReceipt.amount}</span>
+              </div>
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={handleDeleteReceipt}
+                  disabled={isDeleting}
+                  className="flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Trash2 size={14} /> {isDeleting ? "Deleting..." : "Delete Bill"}
+                </button>
               </div>
             </div>
           </div>
