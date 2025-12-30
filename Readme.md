@@ -609,7 +609,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 <div align="center">
 
-**[Live Demo](https://green-recipt.vercel.app)** · **[Report Issue](https://github.com/24f3001062/greenreceipt/issues)** · **[Request Feature](https://github.com/24f3001062/greenreceipt/issues)**
+**[Live Demo](https://green-recipt.vercel.app)** · **[Report Issue]([https://github.com/24f3001062/greenreceipt/issues](https://github.com/24f3001062/Green-Recipt/issues))** · **[Request Feature]([https://github.com/24f3001062/greenreceipt/issues](https://github.com/24f3001062/Green-Recipt/issues))**
 
 </div>
+
 
