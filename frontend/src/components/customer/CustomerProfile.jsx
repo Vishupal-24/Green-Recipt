@@ -706,7 +706,7 @@ const CustomerProfile = () => {
       {/* Logout Button */}
       <button 
         onClick={handleLogout}
-        className={`w-full ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700 hover:border-red-900/30 hover:text-red-400' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-red-200 hover:text-red-600'} border p-4 rounded-2xl font-medium flex items-center justify-center gap-2 transition-all`}
+        className={`w-full ${isDark ? 'bg-slate-800 border-slate-700 text-red-600 hover:bg-slate-700 hover:border-red-900/30 hover:text-red-400' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-red-200 hover:text-red-600'} border p-4 rounded-2xl font-medium flex items-center justify-center gap-2 transition-all`}
       >
         <LogOut size={18} /> {t('common.logout')}
       </button>
