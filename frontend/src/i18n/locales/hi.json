@@ -42,8 +42,15 @@
     "calendar": "कैलेंडर",
     "overview": "ओवरव्यू",
     "billing": "बिल बनाएं",
+    "bill": "बिल",
     "items": "आइटम",
-    "salesInsights": "बिक्री विश्लेषण"
+    "salesInsights": "बिक्री विश्लेषण",
+    "mainMenu": "मुख्य मेन्यू",
+    "newTransaction": "नया लेनदेन",
+    "salesHistory": "बिक्री इतिहास",
+    "analytics": "एनालिटिक्स",
+    "inventory": "इन्वेंटरी",
+    "shopSettings": "दुकान सेटिंग्स"
   },
   
   "dashboard": {
@@ -108,6 +115,7 @@
     "yourName": "आपका नाम",
     "verified": "सत्यापित",
     "pending": "लंबित",
+    "since": "{{date}} से",
     
     "tabs": {
       "personal": "व्यक्तिगत",
@@ -173,13 +181,14 @@
     },
     
     "appearance": {
+      "title": "प्रदर्शन",
       "darkMode": "डार्क मोड",
-      "switchTheme": "थीम बदलें"
+      "switchTheme": "लाइट और डार्क थीम के बीच स्विच करें"
     },
     
     "language": {
       "title": "भाषा",
-      "selectLanguage": "भाषा चुनें",
+      "selectLanguage": "अपनी पसंदीदा भाषा चुनें",
       "english": "English",
       "hindi": "हिंदी"
     },
@@ -296,7 +305,9 @@
   },
   
   "merchant": {
-    "goodMorning": "सुप्रभात!",
+    "goodMorning": "सुप्रभात",
+    "goodAfternoon": "नमस्ते",
+    "goodEvening": "शुभ संध्या",
     "todayUpdate": "आज क्या हो रहा है, यहाँ देखें।",
     "currentDate": "आज की तारीख",
     "todaysSales": "आज की बिक्री",
@@ -312,7 +323,36 @@
     "liveUpdates": "लाइव अपडेट",
     "items": "आइटम",
     "item": "आइटम",
-    "sold": "बेचा"
+    "sold": "बेचा",
+    
+    "profile": {
+      "businessDetails": "व्यवसाय विवरण",
+      "contactLocation": "संपर्क जानकारी और स्थान",
+      "shopName": "दुकान का नाम",
+      "ownerName": "मालिक का नाम",
+      "phoneNumber": "फ़ोन नंबर",
+      "emailAddress": "ईमेल पता",
+      "shopAddress": "दुकान का पता",
+      "receiptBranding": "रसीद ब्रांडिंग",
+      "storeLogo": "स्टोर लोगो",
+      "uploadLogo": "लोगो अपलोड करें",
+      "logoSizeHint": "अधिकतम आकार: 2MB. फ़ॉर्मेट: JPG, PNG.",
+      "footerMessage": "फुटर संदेश",
+      "footerPlaceholder": "जैसे धन्यवाद, फिर आइएगा!",
+      "livePreview": "ग्राहक प्रीव्यू",
+      "yourShop": "आपकी दुकान",
+      "yourAddress": "आपका पता",
+      "thankYou": "धन्यवाद!",
+      "greenImpact": "आपका हरित प्रभाव",
+      "sinceJoining": "जुड़ने के बाद से, आपने बचाया:",
+      "paperSaved": "कागज़ बचाया",
+      "digitalBills": "डिजिटल बिल",
+      "logoutAccount": "खाता लॉगआउट करें",
+      "logoutConfirm": "क्या आप वाकई लॉगआउट करना चाहते हैं?",
+      "shopNameRequired": "दुकान का नाम आवश्यक है",
+      "imageTooLarge": "छवि बहुत बड़ी है (अधिकतम 2MB)",
+      "failedToSave": "सहेजने में विफल"
+    }
   },
   
   "validation": {

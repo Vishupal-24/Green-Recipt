@@ -166,11 +166,13 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Home, BarChart3, Plus, Package, FileClock } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const BottomNav = () => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   
   // Standard Nav Item Style (Gray)
   const navClass = ({ isActive }) => 
@@ -195,13 +197,13 @@ const BottomNav = () => {
       {/* 1. HOME */}
       <NavLink to="/merchant/overview" className={navClass}>
         <Home strokeWidth={2.5} className="w-6 h-6" />
-        <span className="text-[10px] font-bold">Home</span>
+        <span className="text-[10px] font-bold">{t('nav.home')}</span>
       </NavLink>
 
       {/* 2. INSIGHTS */}
       <NavLink to="/merchant/insights" className={navClass}>
         <BarChart3 strokeWidth={2.5} className="w-6 h-6" />
-        <span className="text-[10px] font-bold">Insights</span>
+        <span className="text-[10px] font-bold">{t('nav.insights')}</span>
       </NavLink>
 
       {/* 3. CENTER ACTION (Create Bill) - Highlighted & Contained */}
@@ -218,20 +220,20 @@ const BottomNav = () => {
             {/* Optional: Label below */}
             <span className={`text-[10px] font-bold mt-1 ${
               isDark ? 'text-emerald-400' : 'text-emerald-700'
-            }`}>Bill</span>
+            }`}>{t('nav.bill') || 'Bill'}</span>
         </NavLink>
       </div>
 
       {/* 4. ITEMS (Inventory) */}
       <NavLink to="/merchant/items" className={navClass}>
         <Package strokeWidth={2.5} className="w-6 h-6" />
-        <span className="text-[10px] font-bold">Items</span>
+        <span className="text-[10px] font-bold">{t('nav.items')}</span>
       </NavLink>
 
       {/* 5. HISTORY (or Profile) */}
       <NavLink to="/merchant/calendar" className={navClass}>
         <FileClock strokeWidth={2.5} className="w-6 h-6" />
-        <span className="text-[10px] font-bold">History</span>
+        <span className="text-[10px] font-bold">{t('nav.history')}</span>
       </NavLink>
 
     </div>

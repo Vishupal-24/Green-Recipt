@@ -221,6 +221,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom'; // 👈 1. Import NavLink
+import { useTranslation } from 'react-i18next';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -237,6 +238,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 
 const MerchantSidebar = ({ isOpen, onClose }) => {
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   // 🚪 Logout Logic
   const handleLogout = () => {
@@ -335,7 +337,7 @@ const MerchantSidebar = ({ isOpen, onClose }) => {
             <div>
               <h1 className={`font-black text-lg tracking-tight leading-none ${
                 isDark ? 'text-white' : 'text-slate-900'
-              }`}>GreenReceipt</h1>
+              }`}>{t('common.appName')}</h1>
               <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${
                 isDark ? 'text-slate-500' : 'text-slate-500'
               }`}>Merchant App</p>
@@ -359,15 +361,15 @@ const MerchantSidebar = ({ isOpen, onClose }) => {
         <div className="flex-1 overflow-y-auto px-4 space-y-1 pb-4 no-scrollbar">
           <p className={`px-4 text-[10px] font-black uppercase tracking-widest mb-3 mt-2 ${
             isDark ? 'text-slate-500' : 'text-slate-600'
-          }`}>Main Menu</p>
+          }`}>{t('nav.mainMenu') || 'Main Menu'}</p>
           
           {/* 👇 UPDATED LINKS: Pointing to real routes now */}
-          <NavItem to="/merchant/overview" icon={LayoutDashboard} label="Overview" subLabel="Dashboard" />
-          <NavItem to="/merchant/billing" icon={PlusCircle} label="Create Bill" subLabel="New Transaction" />
-          <NavItem to="/merchant/calendar" icon={Calendar} label="Calendar" subLabel="Sales History" />
-          <NavItem to="/merchant/insights" icon={BarChart3} label="Sales Insights" subLabel="Analytics" />
-          <NavItem to="/merchant/items" icon={Package} label="Items" subLabel="Inventory" />
-          <NavItem to="/merchant/profile" icon={User} label="Profile" subLabel="Shop Settings" />
+          <NavItem to="/merchant/overview" icon={LayoutDashboard} label={t('nav.overview')} subLabel={t('dashboard.title')} />
+          <NavItem to="/merchant/billing" icon={PlusCircle} label={t('nav.billing')} subLabel={t('nav.newTransaction') || 'New Transaction'} />
+          <NavItem to="/merchant/calendar" icon={Calendar} label={t('nav.calendar')} subLabel={t('nav.salesHistory') || 'Sales History'} />
+          <NavItem to="/merchant/insights" icon={BarChart3} label={t('nav.salesInsights')} subLabel={t('nav.analytics') || 'Analytics'} />
+          <NavItem to="/merchant/items" icon={Package} label={t('nav.items')} subLabel={t('nav.inventory') || 'Inventory'} />
+          <NavItem to="/merchant/profile" icon={User} label={t('nav.profile')} subLabel={t('nav.shopSettings') || 'Shop Settings'} />
         </div>
 
         {/* LOGOUT BUTTON */}

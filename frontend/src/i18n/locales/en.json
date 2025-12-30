@@ -42,8 +42,15 @@
     "calendar": "Calendar",
     "overview": "Overview",
     "billing": "Create Bill",
+    "bill": "Bill",
     "items": "Items",
-    "salesInsights": "Sales Insights"
+    "salesInsights": "Sales Insights",
+    "mainMenu": "Main Menu",
+    "newTransaction": "New Transaction",
+    "salesHistory": "Sales History",
+    "analytics": "Analytics",
+    "inventory": "Inventory",
+    "shopSettings": "Shop Settings"
   },
   
   "dashboard": {
@@ -108,6 +115,7 @@
     "yourName": "Your Name",
     "verified": "Verified",
     "pending": "Pending",
+    "since": "Since {{date}}",
     
     "tabs": {
       "personal": "Personal",
@@ -173,13 +181,14 @@
     },
     
     "appearance": {
+      "title": "Appearance",
       "darkMode": "Dark Mode",
-      "switchTheme": "Switch theme"
+      "switchTheme": "Switch between light and dark themes"
     },
     
     "language": {
       "title": "Language",
-      "selectLanguage": "Select Language",
+      "selectLanguage": "Select your preferred language",
       "english": "English",
       "hindi": "हिंदी"
     },
@@ -296,7 +305,9 @@
   },
   
   "merchant": {
-    "goodMorning": "Good Morning!",
+    "goodMorning": "Good Morning",
+    "goodAfternoon": "Good Afternoon",
+    "goodEvening": "Good Evening",
     "todayUpdate": "Here is what's happening today.",
     "currentDate": "Current Date",
     "todaysSales": "Today's Sales",
@@ -312,7 +323,36 @@
     "liveUpdates": "Live Updates",
     "items": "items",
     "item": "item",
-    "sold": "sold"
+    "sold": "sold",
+    
+    "profile": {
+      "businessDetails": "Business Details",
+      "contactLocation": "Contact info & location",
+      "shopName": "Shop Name",
+      "ownerName": "Owner Name",
+      "phoneNumber": "Phone Number",
+      "emailAddress": "Email Address",
+      "shopAddress": "Shop Address",
+      "receiptBranding": "Receipt Branding",
+      "storeLogo": "Store Logo",
+      "uploadLogo": "Upload Logo",
+      "logoSizeHint": "Max size: 2MB. Format: JPG, PNG.",
+      "footerMessage": "Footer Message",
+      "footerPlaceholder": "e.g. Thank you, visit again!",
+      "livePreview": "Live Customer Preview",
+      "yourShop": "Your Shop",
+      "yourAddress": "Your Address",
+      "thankYou": "Thank you!",
+      "greenImpact": "Your Green Impact",
+      "sinceJoining": "Since joining, you have saved:",
+      "paperSaved": "Paper Saved",
+      "digitalBills": "Digital Bills",
+      "logoutAccount": "Logout Account",
+      "logoutConfirm": "Are you sure you want to logout?",
+      "shopNameRequired": "Shop name is required",
+      "imageTooLarge": "Image is too large (Max 2MB)",
+      "failedToSave": "Failed to save"
+    }
   },
 
   "validation": {

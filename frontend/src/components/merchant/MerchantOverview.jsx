@@ -350,6 +350,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   ShoppingBag,
   Clock,
@@ -368,6 +369,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 const MerchantOverview = () => {
   // 👈 Removed unused 'onNavigate' prop
   const { isDark } = useTheme();
+  const { t } = useTranslation();
 
   // 👇 2. Initialize Hook
   const navigate = useNavigate();
@@ -558,9 +560,9 @@ const MerchantOverview = () => {
       })
     );
 
-    if (hour < 12) return "Good Morning";
-    if (hour < 17) return "Good Afternoon"; // Until 5 PM
-    return "Good Evening";
+    if (hour < 12) return t('merchant.goodMorning');
+    if (hour < 17) return t('merchant.goodAfternoon') || 'Good Afternoon'; // Until 5 PM
+    return t('merchant.goodEvening') || 'Good Evening';
   };
 
   const currentDateIST = new Date().toLocaleDateString("en-IN", {
@@ -601,11 +603,11 @@ const MerchantOverview = () => {
             {getGreeting()}!
           </h2>
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Here is what's happening today.
+            {t('merchant.todayUpdate')}
           </p>
         </div>
         <div className="text-right">
-          <p className={`text-xs font-bold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Today</p>
+          <p className={`text-xs font-bold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('time.today')}</p>
           <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
             {new Date().toLocaleDateString("en-US", {
               month: "short",
@@ -630,7 +632,7 @@ const MerchantOverview = () => {
             <div>
               <div className="flex items-center gap-2 mb-2 md:mb-3">
                 <span className="px-2 md:px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider">
-                  Today
+                  {t('time.today')}
                 </span>
                 {/* Optional: You can add percentage change here if you calculate yesterday's sales */}
               </div>
@@ -638,7 +640,7 @@ const MerchantOverview = () => {
                 ₹{totalSales.toLocaleString("en-IN")}
               </h2>
               <p className="text-slate-400 text-xs md:text-sm mt-1.5 md:mt-2">
-                {todaysBills.length} receipts today
+                {t('dashboard.receiptsCount', { count: todaysBills.length })} {t('time.today').toLowerCase()}
               </p>
             </div>
 
@@ -649,7 +651,7 @@ const MerchantOverview = () => {
                 <div className="flex items-center gap-1.5 md:gap-2 text-emerald-400 mb-0.5 md:mb-1">
                   <Smartphone size={12} className="md:w-[14px] md:h-[14px]" />
                   <span className="text-[10px] md:text-xs font-medium">
-                    UPI
+                    {t('dashboard.upi')}
                   </span>
                 </div>
                 <p className="text-base md:text-xl font-bold">
@@ -661,7 +663,7 @@ const MerchantOverview = () => {
                 <div className="flex items-center gap-1.5 md:gap-2 text-amber-400 mb-0.5 md:mb-1">
                   <Banknote size={12} className="md:w-[14px] md:h-[14px]" />
                   <span className="text-[10px] md:text-xs font-medium">
-                    Cash
+                    {t('dashboard.cash')}
                   </span>
                 </div>
                 <p className="text-base md:text-xl font-bold">
@@ -675,7 +677,7 @@ const MerchantOverview = () => {
           <div className="grid grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-white/10">
             <div>
               <p className="text-slate-400 text-[10px] md:text-xs font-medium">
-                This Month
+                {t('dashboard.thisMonth')}
               </p>
               <p className="text-sm md:text-xl font-bold mt-0.5 md:mt-1">
                 ₹{monthSales.toLocaleString("en-IN")}
@@ -683,7 +685,7 @@ const MerchantOverview = () => {
             </div>
             <div>
               <p className="text-slate-400 text-[10px] md:text-xs font-medium">
-                Bills (Month)
+                {t('merchant.billsGenerated')}
               </p>
               <p className="text-sm md:text-xl font-bold mt-0.5 md:mt-1">
                 {monthBills.length}
@@ -691,7 +693,7 @@ const MerchantOverview = () => {
             </div>
             <div>
               <p className="text-slate-400 text-[10px] md:text-xs font-medium">
-                This Week
+                {t('dashboard.thisWeek')}
               </p>
               <p className="text-sm md:text-xl font-bold mt-0.5 md:mt-1">
                 ₹{weekSales.toLocaleString("en-IN")}
@@ -711,12 +713,12 @@ const MerchantOverview = () => {
         {/* Activity Feed */}
         <div className={`lg:col-span-2 rounded-2xl border shadow-sm p-6 ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'}`}>
           <h3 className={`font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-            Recent Transactions (Today)
+            {t('merchant.recentTransactions')}
           </h3>
           <div className="space-y-4">
             {todaysBills.length === 0 ? (
               <p className={`text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                No sales yet today.
+                {t('merchant.noSalesYet')}
               </p>
             ) : (
               todaysBills.slice(0, 5).map((bill, index) => (
@@ -735,14 +737,13 @@ const MerchantOverview = () => {
                     </div>
                     <div>
                       <p className={`font-bold text-sm transition-colors ${isDark ? 'text-slate-200 group-hover:text-emerald-400' : 'text-slate-700 group-hover:text-emerald-700'}`}>
-                        {bill.customerName || "Walk-in Customer"}
+                        {bill.customerName || t('merchant.walkInCustomer')}
                       </p>
                       <p className={`text-xs flex items-center gap-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         <Clock size={10} /> {bill.time}
                         {bill.items?.length > 0 && (
                           <span className="ml-1">
-                            • {bill.items.length} item
-                            {bill.items.length > 1 ? "s" : ""}
+                            • {bill.items.length} {bill.items.length > 1 ? t('merchant.items') : t('merchant.item')}
                           </span>
                         )}
                       </p>
@@ -765,16 +766,16 @@ const MerchantOverview = () => {
         {/* Trending Items */}
         <div className={`rounded-2xl border shadow-sm p-6 ${isDark ? 'bg-dark-card border-dark-border' : 'bg-white border-slate-100'}`}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>Trending Items</h3>
+            <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>{t('merchant.trendingItems')}</h3>
             <div className="flex items-center gap-1 text-orange-500">
               <Flame size={16} />
-              <span className="text-xs font-bold">This Week</span>
+              <span className="text-xs font-bold">{t('merchant.thisWeek')}</span>
             </div>
           </div>
           <div className="space-y-5">
             {trendingItems.length === 0 ? (
               <p className={`text-center py-4 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                No sales data yet
+                {t('merchant.noSalesData')}
               </p>
             ) : (
               trendingItems.map((item, i) => (
@@ -787,7 +788,7 @@ const MerchantOverview = () => {
                       {item.name}
                     </span>
                     <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-                      {item.count} sold • ₹{item.revenue}
+                      {item.count} {t('merchant.sold')} • ₹{item.revenue}
                     </span>
                   </div>
                   <div className={`h-2.5 w-full rounded-full overflow-hidden ${isDark ? 'bg-dark-surface' : 'bg-slate-100'}`}>
