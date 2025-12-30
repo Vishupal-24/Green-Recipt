@@ -1,0 +1,289 @@
+{
+  "common": {
+    "appName": "GreenReceipt",
+    "tagline": "Go paperless",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "refresh": "Refresh",
+    "logout": "Log Out",
+    "version": "Version",
+    "currency": "₹",
+    "receipts": "receipts",
+    "receipt": "receipt",
+    "total": "total"
+  },
+  
+  "nav": {
+    "home": "Home",
+    "receipts": "Receipts",
+    "history": "History",
+    "insights": "Insights",
+    "alerts": "Alerts",
+    "profile": "Profile",
+    "calendar": "Calendar",
+    "overview": "Overview",
+    "billing": "Create Bill",
+    "items": "Items",
+    "salesInsights": "Sales Insights"
+  },
+  
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Your spending at a glance",
+    "thisMonth": "This Month",
+    "thisWeek": "This Week",
+    "lastMonth": "Last Month",
+    "thisYear": "This Year",
+    "receiptsThisMonth": "{{count}} receipts this month",
+    "upi": "UPI",
+    "cash": "Cash"
+  },
+  
+  "receipts": {
+    "title": "All Receipts",
+    "subtitle": "{{count}} receipts • {{currency}}{{total}} total",
+    "searchPlaceholder": "Search by merchant name...",
+    "noReceipts": "No receipts",
+    "allCaughtUp": "You're all caught up!",
+    "digital": "Digital",
+    "uploaded": "Uploaded",
+    "qr": "QR",
+    "upload": "Upload",
+    "sortByDate": "Date",
+    "sortByAmount": "Amount",
+    "paymentMethod": "Payment Method",
+    "deleteConfirm": "Delete this receipt?",
+    "uploadSuccess": "Receipt uploaded successfully!",
+    "uploadFailed": "Failed to upload receipt"
+  },
+  
+  "ecoImpact": {
+    "title": "Eco Impact",
+    "paperSaved": "You've saved {{amount}}kg of paper this month! 🌱",
+    "thisMonth": "This Month",
+    "waterSaved": "Water Saved",
+    "allTime": "All time: {{receipts}} receipts • {{paper}}kg paper saved"
+  },
+  
+  "profile": {
+    "title": "My Profile",
+    "memberSince": "Member since {{date}}",
+    "yourName": "Your Name",
+    "verified": "Verified",
+    "pending": "Pending",
+    
+    "tabs": {
+      "personal": "Personal",
+      "address": "Address",
+      "security": "Security"
+    },
+    
+    "stats": {
+      "receipts": "Receipts",
+      "totalSpent": "Total Spent",
+      "avgPerReceipt": "Avg/Receipt"
+    },
+    
+    "personal": {
+      "title": "Personal Information",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "email": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+91 98765 43210"
+    },
+    
+    "address": {
+      "title": "Address Details",
+      "line1": "Address Line 1",
+      "line1Placeholder": "Street address, apartment, etc.",
+      "line2": "Address Line 2",
+      "line2Placeholder": "Landmark, building name (optional)",
+      "city": "City",
+      "cityPlaceholder": "Mumbai",
+      "state": "State",
+      "statePlaceholder": "Maharashtra",
+      "postalCode": "Postal Code",
+      "postalCodePlaceholder": "400001",
+      "country": "Country",
+      "countryPlaceholder": "India"
+    },
+    
+    "security": {
+      "title": "Security Settings",
+      "changePassword": "Change Password",
+      "changePasswordDesc": "Update your account password",
+      "emailVerified": "Email Verified",
+      "currentPassword": "Current Password",
+      "currentPasswordPlaceholder": "Enter current password",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "Min. 6 characters",
+      "confirmPassword": "Confirm New Password",
+      "confirmPasswordPlaceholder": "Confirm new password",
+      "updatePassword": "Update Password",
+      "changing": "Changing..."
+    },
+    
+    "dangerZone": {
+      "title": "Danger Zone",
+      "deleteAccount": "Delete Account",
+      "deleteAccountDesc": "Permanently delete your account and data",
+      "deleteWarning": "Warning: This action is irreversible. All your data, receipts, and account information will be permanently deleted.",
+      "typeDelete": "Type \"DELETE\" to confirm",
+      "deleting": "Deleting...",
+      "deleteMyAccount": "Delete My Account"
+    },
+    
+    "appearance": {
+      "darkMode": "Dark Mode",
+      "switchTheme": "Switch theme"
+    },
+    
+    "language": {
+      "title": "Language",
+      "selectLanguage": "Select Language",
+      "english": "English",
+      "hindi": "हिंदी"
+    },
+    
+    "saveButton": {
+      "saveChanges": "Save Changes",
+      "noChanges": "No Changes",
+      "saving": "Saving..."
+    },
+    
+    "messages": {
+      "profileUpdated": "Profile updated successfully!",
+      "updateFailed": "Failed to update profile",
+      "loadFailed": "Unable to load profile",
+      "noChanges": "No changes to save",
+      "passwordChanged": "Password changed successfully!",
+      "passwordChangeFailed": "Failed to change password",
+      "passwordMismatch": "Passwords do not match",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "nameTooShort": "Name must be at least 2 characters",
+      "invalidEmail": "Please enter a valid email",
+      "phoneTooShort": "Phone number must be at least 7 digits",
+      "deleteConfirm": "Please type DELETE to confirm",
+      "deleteSuccess": "Account deleted successfully",
+      "deleteFailed": "Failed to delete account",
+      "logoutConfirm": "Are you sure you want to log out?"
+    }
+  },
+  
+  "notifications": {
+    "title": "Smart Alerts",
+    "subtitle": "Stay on top of warranties, budgets & more",
+    "markAllRead": "Mark all read",
+    "noNotifications": "No notifications",
+    "allCaughtUp": "You're all caught up!",
+    
+    "filters": {
+      "all": "All",
+      "unread": "Unread",
+      "warranty": "Warranty",
+      "budget": "Budget",
+      "eco": "Eco"
+    },
+    
+    "types": {
+      "warranty": "Warranty Expiring Soon",
+      "budget": "Monthly Budget Alert",
+      "eco": "Green Milestone Reached! 🌱",
+      "return": "Return Window Closing",
+      "summary": "Weekly Summary Ready"
+    }
+  },
+  
+  "insights": {
+    "title": "Spending Insights",
+    "subtitle": "Understand your spending patterns",
+    "totalSpent": "Total Spent",
+    "avgTransaction": "Avg Transaction",
+    "categories": "Categories",
+    "trends": "Trends",
+    "topMerchants": "Top Merchants",
+    "spendingByCategory": "Spending by Category",
+    "monthlyTrend": "Monthly Trend",
+    "weeklySpending": "Weekly Spending",
+    "noData": "No data available",
+    "loading": "Loading insights..."
+  },
+  
+  "upload": {
+    "title": "Upload Receipt",
+    "dragDrop": "Drag & drop or click to upload",
+    "selectFile": "Select File",
+    "merchant": "Merchant Name",
+    "merchantPlaceholder": "Unknown Merchant",
+    "amount": "Amount",
+    "amountPlaceholder": "0.00",
+    "date": "Transaction Date",
+    "includeInStats": "Include in statistics",
+    "uploading": "Uploading...",
+    "uploadReceipt": "Upload Receipt",
+    "cancel": "Cancel"
+  },
+  
+  "calendar": {
+    "title": "Receipt History",
+    "subtitle": "View receipts by date",
+    "noReceipts": "No receipts on this date",
+    "selectDate": "Select a date"
+  },
+  
+  "merchant": {
+    "goodMorning": "Good Morning!",
+    "todayUpdate": "Here is what's happening today.",
+    "currentDate": "Current Date",
+    "todaysSales": "Today's Sales",
+    "billsGenerated": "Bills Generated",
+    "avgBillValue": "Avg bill value",
+    "createNewBill": "Create New Bill",
+    "recentTransactions": "Recent Transactions (Today)",
+    "noSalesYet": "No sales yet today.",
+    "trendingItems": "Trending Items",
+    "thisWeek": "This Week",
+    "noSalesData": "No sales data yet",
+    "walkInCustomer": "Walk-in Customer",
+    "liveUpdates": "Live Updates",
+    "items": "items",
+    "item": "item",
+    "sold": "sold"
+  },
+
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Please enter a valid email address",
+    "minLength": "Must be at least {{count}} characters",
+    "maxLength": "Must be less than {{count}} characters"
+  },
+
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}} days ago",
+    "hoursAgo": "{{count}} hours ago",
+    "minutesAgo": "{{count}} minutes ago",
+    "justNow": "Just now"
+  }
+}

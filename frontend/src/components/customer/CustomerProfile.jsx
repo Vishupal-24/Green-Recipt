@@ -2,12 +2,13 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { 
   User, Mail, Phone, MapPin, Shield, LogOut, ChevronRight, AlertTriangle, 
   Save, CheckCircle, Lock, Eye, EyeOff, X, Loader2, Receipt, Calendar,
-  TrendingUp, RefreshCw, Trash2, Camera, Edit3, Palette
+  TrendingUp, RefreshCw, Trash2, Camera, Edit3, Palette, Globe
 } from 'lucide-react';
 import { fetchProfile, updateProfile, clearSession, changePassword, deleteAccount, fetchCustomerAnalytics } from '../../services/api';
 import { formatISTDisplay } from '../../utils/timezone';
 import { useTheme } from '../../contexts/ThemeContext';
 import ThemeToggle from '../common/ThemeToggle';
+import { useTranslation } from 'react-i18next';
 
 // ============== TOAST NOTIFICATION COMPONENT ==============
 const Toast = ({ message, type = 'success', onClose }) => {
