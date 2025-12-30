@@ -7,7 +7,6 @@ import CustomerCalendar from '../components/customer/CustomerCalendar';
 import CustomerInsights from '../components/customer/CustomerInsights';
 import CustomerProfile from '../components/customer/CustomerProfile';
 import CustomerNotifications from '../components/customer/CustomerNotifications';
-import ThemeToggle from '../components/common/ThemeToggle';
 import { useTheme } from '../contexts/ThemeContext';
 import { ScanLine, Bell, X, CheckCircle, AlertCircle, Smartphone, Banknote, Clock, ShoppingBag } from 'lucide-react';
 import { createReceipt, claimReceipt, fetchCustomerReceipts } from '../services/api';
@@ -209,7 +208,6 @@ const CustomerDashboard = () => {
             <span className={isDark ? 'text-white' : 'text-slate-800'}>Receipt</span>
           </h1>
           <div className="flex items-center gap-2">
-            <ThemeToggle size="small" />
             <button
               onClick={() => setActiveTab("notifications")}
               className={`p-2 rounded-full active:scale-95 transition-all relative ${
