@@ -3,19 +3,16 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import Merchant from "../models/Merchant.js";
-import { sendOtpEmail } from "../utils/sendEmail.js"; // no-op; nodemailer is commented out
+import { sendOtpEmail } from "../utils/sendEmail.js"; // Currently disabled
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || JWT_SECRET + "_refresh";
 
-// ==========================================
-// TOKEN CONFIGURATION
-// ==========================================
-const ACCESS_TOKEN_EXPIRES_IN = "15m"; // Short-lived access token
-const REFRESH_TOKEN_EXPIRES_IN_DAYS = 21; // 21 days for refresh token (configurable)
+// Token config
+const ACCESS_TOKEN_EXPIRES_IN = "15m";
+const REFRESH_TOKEN_EXPIRES_IN_DAYS = 21;
 const REFRESH_TOKEN_EXPIRES_IN_MS = REFRESH_TOKEN_EXPIRES_IN_DAYS * 24 * 60 * 60 * 1000;
 
-// Cookie configuration for refresh token
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
@@ -24,13 +21,13 @@ const COOKIE_OPTIONS = {
   path: "/",
 };
 
-// Legacy support - used for simple token flows
+// Legacy token expiry (kept for backward compat)
 const JWT_EXPIRES_IN = "7d";
 
 const OTP_LENGTH = 6;
 const OTP_EXPIRY_MINUTES = 10;
 const OTP_MAX_ATTEMPTS = 5;
-const OTP_RESEND_WINDOW_MS = 60 * 1000; // 1 minute cooldown between OTP sends
+const OTP_RESEND_WINDOW_MS = 60 * 1000; // 1 min cooldown
 
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not set. Define it in your environment before starting the server.");
@@ -38,7 +35,7 @@ if (!JWT_SECRET) {
 
 export const forgotPassword = async (req, res) => {
   try {
-    // Feature intentionally disabled until email/OTP delivery is re-enabled.
+    // Disabled until email delivery is re-enabled
     return res.status(501).json({
       message: "Password reset via email is temporarily unavailable. Please contact support.",
     });
@@ -46,10 +43,10 @@ export const forgotPassword = async (req, res) => {
     const { email, role } = req.body;
 
     // Helper to find the right collection
-    const account = await findAccountByRole(email, role); // Reuse your existing helper
+    const account = await findAccountByRole(email, role);
 
     if (!account) {
-      // Security: Don't reveal if user exists or not, but for dev we return 404
+      // Generic response for security (avoid user enumeration)
       return res.status(404).json({ message: "Account not found" });
     }
 
@@ -63,13 +60,13 @@ export const forgotPassword = async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpHash = await bcrypt.hash(otp, 10);
 
-    // Save OTP to User
+    // Store hashed OTP
     account.otpCodeHash = otpHash;
-    account.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    account.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     account.otpLastSentAt = new Date();
     await account.save();
 
-    // Email/OTP disabled; password reset via email is not available in this mode.
+    // Email disabled for now
     // await sendOtpEmail(email, otp);
 
     res.json({ message: "Password reset via OTP is disabled. Please contact support." });
@@ -83,7 +80,7 @@ export const forgotPassword = async (req, res) => {
 // 2. RESET PASSWORD (Verifies OTP + Sets New Password)
 export const resetPassword = async (req, res) => {
   try {
-    // Feature intentionally disabled until email/OTP delivery is re-enabled.
+    // Disabled until email delivery is re-enabled
     return res.status(501).json({
       message: "Password reset via email is temporarily unavailable. Please contact support.",
     });
@@ -93,7 +90,7 @@ export const resetPassword = async (req, res) => {
     const account = await findAccountByRole(email, role);
     if (!account) return res.status(404).json({ message: "Account not found" });
 
-    // Verify OTP Logic (Same as verifyOtp)
+    // Verify OTP
     if (!account.otpCodeHash || !account.otpExpiresAt || account.otpExpiresAt < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired code" });
     }
@@ -105,7 +102,7 @@ export const resetPassword = async (req, res) => {
 
     account.password = newPassword;
     
-    // Clear OTP fields so it can't be reused
+    // Clear OTP to prevent reuse
     account.otpCodeHash = undefined;
     account.otpExpiresAt = undefined;
     
@@ -119,11 +116,8 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// ==========================================
-// TOKEN GENERATION HELPERS
-// ==========================================
+// Token helpers
 
-// Generate short-lived access token (15 minutes)
 const generateAccessToken = (user) =>
   jwt.sign(
     { id: user._id, role: user.role, tokenVersion: user.tokenVersion || 0 },
@@ -131,7 +125,6 @@ const generateAccessToken = (user) =>
     { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
   );
 
-// Generate long-lived refresh token (7 days)
 const generateRefreshToken = (user) =>
   jwt.sign(
     { id: user._id, role: user.role, tokenVersion: user.tokenVersion || 0 },
@@ -139,16 +132,14 @@ const generateRefreshToken = (user) =>
     { expiresIn: `${REFRESH_TOKEN_EXPIRES_IN_DAYS}d` }
   );
 
-// Legacy token for backward compatibility
+// Legacy token generation (7d expiry)
 const generateToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
   });
 
-// Generate a random token for refresh token storage
 const generateRandomToken = () => crypto.randomBytes(64).toString("hex");
 
-// Store refresh token in database
 const persistRefreshToken = async (account, refreshToken) => {
   const hashedToken = await bcrypt.hash(refreshToken, 10);
   account.refreshToken = hashedToken;
@@ -157,7 +148,6 @@ const persistRefreshToken = async (account, refreshToken) => {
   await account.save();
 };
 
-// Clear refresh token from database
 const clearRefreshToken = async (account) => {
   account.refreshToken = undefined;
   account.refreshTokenExpiry = undefined;
@@ -191,7 +181,7 @@ const findAccountByRole = async (email, role = "customer") => {
     .select("+otpCodeHash +otpExpiresAt +otpAttempts +otpLastSentAt");
 
   if (!account) {
-    // If role was wrong, attempt the other collection so users aren't blocked by a role mismatch.
+    // Try the other collection in case role was wrong
     account = await fallbackModel
       .findOne({ email: normalizedEmail })
       .select("+otpCodeHash +otpExpiresAt +otpAttempts +otpLastSentAt");
@@ -222,7 +212,7 @@ export const registerCustomer = async (req, res) => {
     }
 
     const user = new User({ name, email, password, isVerified: true });
-    // OTP path disabled; account is verified immediately and credentials stored.
+    // Skip OTP - auto-verify
     await user.save();
 
     res.status(201).json({
@@ -231,7 +221,7 @@ export const registerCustomer = async (req, res) => {
       role: user.role,
       autoVerified: true,
       redirect: "/customer-login",
-      next: { type: "redirect", path: "/customer-login" }, // hint to clients to go to login
+      next: { type: "redirect", path: "/customer-login" },
     });
   } catch (error) {
     console.error("registerCustomer error", error);
@@ -263,7 +253,7 @@ export const registerMerchant = async (req, res) => {
     }
 
     const merchant = new Merchant({ shopName, email, password, isVerified: true });
-    // OTP path disabled; account is verified immediately and credentials stored.
+    // Skip OTP - auto-verify
     await merchant.save();
 
     res.status(201).json({
@@ -272,7 +262,7 @@ export const registerMerchant = async (req, res) => {
       role: merchant.role,
       autoVerified: true,
       redirect: "/merchant-login",
-      next: { type: "redirect", path: "/merchant-login" }, // hint to clients to go to login
+      next: { type: "redirect", path: "/merchant-login" },
     });
   } catch (error) {
     console.error("registerMerchant error", error);
@@ -296,7 +286,7 @@ export const login = async (req, res) => {
     const Model = role === "merchant" ? Merchant : User;
     const OtherModel = role === "merchant" ? User : Merchant;
 
-    // Include password + refresh fields for auth checks
+    // Fetch account with auth fields
     const account = await Model.findOne({ email: normalizedEmail })
       .select("+password +refreshToken +refreshTokenExpiry +tokenVersion");
 
@@ -304,7 +294,7 @@ export const login = async (req, res) => {
     if (!account) {
       const otherAccount = await OtherModel.findOne({ email: normalizedEmail }).select("_id");
       if (otherAccount) {
-        // Account exists but in the wrong role collection
+        // Wrong login portal
         const actualRole = role === "merchant" ? "customer" : "merchant";
         return res.status(403).json({
           message: `This email is registered as a ${actualRole}. Please use the ${actualRole} login.`,
@@ -312,7 +302,7 @@ export const login = async (req, res) => {
           actualRole,
         });
       }
-      // No account in either collection
+      // Email not found anywhere
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
@@ -321,14 +311,14 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Issue tokens
+    // Generate tokens
     const accessToken = generateAccessToken(account);
     const refreshToken = generateRefreshToken(account);
 
-    // Persist refresh token hash and metadata
+    // Save refresh token
     await persistRefreshToken(account, refreshToken);
 
-    // Set refresh token as HTTP-only cookie (secure, not accessible to JS)
+    // Set HTTP-only cookie
     res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
 
     res.json({
@@ -580,10 +570,10 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
-    // Update password (pre-save hook will hash it)
+    // Update password (pre-save hook hashes it)
     account.password = newPassword;
     
-    // Increment token version to invalidate all existing sessions
+    // Invalidate all existing sessions
     account.tokenVersion = (account.tokenVersion || 0) + 1;
     account.refreshToken = undefined;
     account.refreshTokenExpiry = undefined;
@@ -608,8 +598,7 @@ export const deleteAccount = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    // Optionally: Delete associated receipts (for data cleanup)
-    // You might want to keep receipts for audit purposes, or anonymize them
+    // TODO: Consider keeping receipts for audit, or anonymize them
     // await Receipt.deleteMany({ userId: req.user.id });
 
     res.json({ message: "Account deleted successfully" });
@@ -619,17 +608,15 @@ export const deleteAccount = async (req, res) => {
   }
 };
 
-// ==========================================
-// REFRESH TOKEN ENDPOINTS
-// ==========================================
+// Refresh token endpoints
 
 /**
- * Refresh access token using refresh token
+ * Refresh access token
  * POST /auth/refresh
  */
 export const refreshAccessToken = async (req, res) => {
   try {
-    // Read refresh token from HTTP-only cookie (primary) or request body (fallback for migration)
+    // Cookie is primary, body is fallback for legacy clients
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (!refreshToken) {
@@ -641,7 +628,7 @@ export const refreshAccessToken = async (req, res) => {
     try {
       decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
     } catch (error) {
-      // Clear cookie so clients stop retrying with a bad/expired refresh token
+      // Clear bad cookie
       res.clearCookie("refreshToken", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -663,7 +650,7 @@ export const refreshAccessToken = async (req, res) => {
       return res.status(401).json({ message: "Account not found", code: "ACCOUNT_NOT_FOUND" });
     }
 
-    // Check if refresh token is still valid in database
+    // Validate stored token exists
     if (!account.refreshToken || !account.refreshTokenExpiry) {
       res.clearCookie("refreshToken", {
         httpOnly: true,
@@ -674,9 +661,9 @@ export const refreshAccessToken = async (req, res) => {
       return res.status(401).json({ message: "Session expired. Please login again.", code: "SESSION_EXPIRED" });
     }
 
-    // Check if refresh token has expired in database
+    // Check if expired
     if (account.refreshTokenExpiry < new Date()) {
-      // Clear expired token
+      // Clean up expired token
       await clearRefreshToken(account);
       res.clearCookie("refreshToken", {
         httpOnly: true,
@@ -687,7 +674,7 @@ export const refreshAccessToken = async (req, res) => {
       return res.status(401).json({ message: "Session expired. Please login again.", code: "SESSION_EXPIRED" });
     }
 
-    // Verify token version matches (for invalidating all sessions on password change)
+    // Version mismatch = password was changed
     if (decoded.tokenVersion !== (account.tokenVersion || 0)) {
       await clearRefreshToken(account);
       res.clearCookie("refreshToken", {
@@ -699,10 +686,10 @@ export const refreshAccessToken = async (req, res) => {
       return res.status(401).json({ message: "Session invalidated. Please login again.", code: "SESSION_INVALIDATED" });
     }
 
-    // Verify the stored refresh token matches
+    // Verify stored hash matches - detect token reuse attacks
     const isValidToken = await bcrypt.compare(refreshToken, account.refreshToken);
     if (!isValidToken) {
-      // Possible token reuse attack - clear all tokens
+      // Clear all tokens on suspected attack
       await clearRefreshToken(account);
       res.clearCookie("refreshToken", {
         httpOnly: true,
@@ -713,10 +700,10 @@ export const refreshAccessToken = async (req, res) => {
       return res.status(401).json({ message: "Invalid session. Please login again.", code: "INVALID_SESSION" });
     }
 
-    // Generate new access token
+    // Issue new access token
     const newAccessToken = generateAccessToken(account);
 
-    // Optionally rotate refresh token for better security
+    // Rotate refresh token for security
     const newRefreshToken = generateRefreshToken(account);
     await persistRefreshToken(account, newRefreshToken);
 

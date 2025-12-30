@@ -10,22 +10,22 @@ const connectDB = async () => {
 
 	try {
 		await mongoose.connect(mongoUri, {
-			// Connection pool settings
+			// Pool
 			maxPoolSize: 10,
 			minPoolSize: 2,
 
-			// Timeouts
+			// Timeouts (ms)
 			serverSelectionTimeoutMS: 5000,
 			socketTimeoutMS: 45000,
 
-			// Write concern
+			// Writes
 			retryWrites: true,
 			w: "majority",
 		});
 
 		console.log("✅ MongoDB connected successfully");
 
-		// Connection event handlers
+		// Handle connection events
 		mongoose.connection.on("disconnected", () => {
 			console.warn("⚠️ MongoDB disconnected. Attempting reconnection...");
 		});
@@ -39,7 +39,7 @@ const connectDB = async () => {
 		});
 	} catch (error) {
 		console.error("❌ MongoDB connection error:", error.message);
-		// Retry connection after 5 seconds instead of hard exit
+		// Auto-retry instead of crashing
 		console.log("Retrying connection in 5 seconds...");
 		setTimeout(connectDB, 5000);
 	}

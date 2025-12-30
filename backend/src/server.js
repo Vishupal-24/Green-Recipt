@@ -15,20 +15,20 @@ import merchantRoutes from "./routes/merchantRoutes.js";
 
 const app = express();
 
-// Required when behind a proxy (Render/Cloudflare) for correct IP and rate limiting
+// Trust proxy headers (needed for rate limiting behind Render/Cloudflare)
 app.set("trust proxy", 1);
 
-// ============ DATABASE ============
+// Database
 connectDB();
 
-// ============ SECURITY & BASICS ============
+// Security & middleware
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(",")
   : ["http://localhost:5173", "https://green-recipt.vercel.app"];
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // allow tools/curl/postman
+    if (!origin) return callback(null, true); // Allow non-browser clients
     if (allowedOrigins.includes(origin) || origin.includes("vercel.app")) {
       return callback(null, true);
     }
@@ -42,7 +42,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 app.use(helmet());
-app.use(cookieParser()); // Parse cookies for refresh token
+app.use(cookieParser());
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 app.use(mongoSanitize());
@@ -58,7 +58,7 @@ const globalLimiter = rateLimit({
 });
 app.use("/api", globalLimiter);
 
-// ============ ROUTES ============
+// Routes
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     status: "ok",
@@ -73,7 +73,7 @@ app.use("/api/receipts", receiptRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/merchant", merchantRoutes);
 
-// ============ ERROR HANDLERS ============
+// Error handlers
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
@@ -86,7 +86,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ============ SERVER ============
+// Start server
 const PORT = process.env.PORT || 5001;
 const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`);
