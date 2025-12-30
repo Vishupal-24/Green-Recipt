@@ -1854,8 +1854,10 @@ const MerchantBilling = ({ inventory }) => {
 
   const removeFromCart = (itemId) => setCart(prev => prev.filter(item => item.id !== itemId));
 
-  // 🚀 GENERATE QR
-  const handleGenerateQR = async () => {
+  // 🚀 GENERATE QR (no server write until payment is confirmed)
+  const handleGenerateQR = () => {
+    if (cart.length === 0) return;
+
     const baseBill = {
       merchant: merchantProfile.shopName,
       mid: merchantProfile.merchantId,
@@ -1870,77 +1872,78 @@ const MerchantBilling = ({ inventory }) => {
       footer: merchantProfile.receiptFooter || "Thank you!"
     };
 
-    let createdReceipt = null;
-    try {
-      const payload = {
-        items: cart.map(item => ({ name: item.name, unitPrice: item.price, quantity: item.quantity })),
-        source: 'qr',
-        paymentMethod: 'upi', 
-        transactionDate: getNowIST().toISOString(),
-        total: cartTotal,
-        footer: merchantProfile.receiptFooter,
-        status: 'pending',
-      };
-      const { data } = await createReceipt(payload);
-      createdReceipt = data;
-      const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
-      localStorage.setItem('merchantSales', JSON.stringify([data, ...currentSales]));
-    } catch (err) {
-      createdReceipt = { ...baseBill, id: `GR-${Date.now().toString().slice(-6)}`, status: 'pending' };
-      const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
-      localStorage.setItem('merchantSales', JSON.stringify([createdReceipt, ...currentSales]));
-    }
-
-    const receiptId = createdReceipt?.id || createdReceipt?._id || `GR-${Date.now().toString().slice(-6)}`;
-    const billData = { ...baseBill, id: receiptId, rid: receiptId };
+    // Use a local temp id for the QR; we persist only after payment
+    const tempId = `GR-${Date.now().toString().slice(-6)}`;
+    const billData = { ...baseBill, id: tempId, rid: tempId };
     setGeneratedBill(billData);
+
     const jsonString = JSON.stringify(billData);
     const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(jsonString)}`;
     setQrDataUrl(apiUrl);
     setShowQr(true);
   };
 
-  // 💾 SAVE THE SALE
+  const handleCloseQr = () => {
+    setShowQr(false);
+    setGeneratedBill(null);
+    setQrDataUrl("");
+  };
+
+  // 💾 SAVE THE SALE (persist + mark paid only after payment confirmation)
   const handlePaymentReceived = async (method) => {
-      if (!generatedBill) return;
+    if (!generatedBill) return;
 
-      const receiptId = generatedBill.rid || generatedBill.id;
+    try {
+      const payload = {
+        items: cart.map(item => ({ name: item.name, unitPrice: item.price, quantity: item.quantity })),
+        source: 'qr',
+        paymentMethod: method,
+        transactionDate: getNowIST().toISOString(),
+        total: cartTotal,
+        footer: merchantProfile.receiptFooter,
+        status: 'pending',
+      };
 
-      try {
-        if (receiptId) {
-          const { data } = await markReceiptPaid(receiptId, method);
-          
-          const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
-          const finalData = { ...data, paymentMethod: method };
-          
-          const merged = [finalData, ...currentSales.filter(r => r.id !== receiptId && r._id !== receiptId)];
-          localStorage.setItem('merchantSales', JSON.stringify(merged));
-          
-          window.dispatchEvent(new Event('customer-receipts-updated'));
-          window.dispatchEvent(new Event('merchantStorage')); 
-        }
-      } catch (err) {
-        console.error(err);
-        const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
-        
-        const newSale = {
-          ...generatedBill,
-          total: cartTotal,
-          status: 'completed',
-          paymentMethod: method 
-        };
-        
-        const merged = [newSale, ...currentSales.filter(r => r.id !== receiptId)];
-        localStorage.setItem('merchantSales', JSON.stringify(merged));
-        window.dispatchEvent(new Event('merchantStorage'));
-      }
+      // Create receipt only now (prevents orphan receipts when modal is closed)
+      const { data: created } = await createReceipt(payload);
+      const persistedId = created.id || created._id;
 
-      setShowQr(false);
-      setCart([]);
-      setIsMobileCartOpen(false);
-      
-      const methodText = method === 'upi' ? "UPI" : "Cash";
-      toast.success(`Payment Received via ${methodText}!`);
+      // Mark as paid to capture paidAt timestamp and final status
+      const { data: updated } = await markReceiptPaid(persistedId, method);
+
+      const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
+      const merged = [updated, ...currentSales.filter(r => r.id !== persistedId && r._id !== persistedId)];
+      localStorage.setItem('merchantSales', JSON.stringify(merged));
+
+      window.dispatchEvent(new Event('customer-receipts-updated'));
+      window.dispatchEvent(new Event('merchantStorage'));
+    } catch (err) {
+      console.error(err);
+      const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
+
+      const fallbackId = generatedBill.rid || generatedBill.id || `GR-${Date.now().toString().slice(-6)}`;
+      const newSale = {
+        ...generatedBill,
+        id: fallbackId,
+        rid: fallbackId,
+        total: cartTotal,
+        status: 'completed',
+        paymentMethod: method,
+      };
+
+      const merged = [newSale, ...currentSales.filter(r => r.id !== fallbackId && r._id !== fallbackId)];
+      localStorage.setItem('merchantSales', JSON.stringify(merged));
+      window.dispatchEvent(new Event('merchantStorage'));
+    }
+
+    setShowQr(false);
+    setGeneratedBill(null);
+    setQrDataUrl("");
+    setCart([]);
+    setIsMobileCartOpen(false);
+
+    const methodText = method === 'upi' ? "UPI" : "Cash";
+    toast.success(`Payment Received via ${methodText}!`);
   };
 
   return (
@@ -2101,7 +2104,7 @@ const MerchantBilling = ({ inventory }) => {
       {showQr && (
         <div className="fixed inset-0 bg-black/90 md:bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full text-center animate-[popIn_0.2s_ease-out]">
-            <div className="flex justify-end"><button onClick={() => setShowQr(false)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X size={18} /></button></div>
+            <div className="flex justify-end"><button onClick={handleCloseQr} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200"><X size={18} /></button></div>
             
             <h2 className="text-xl font-bold text-slate-800 mb-1">Scan to Save Bill</h2>
             <p className="text-[10px] text-slate-500 mb-4">Customer can scan this to get the receipt instantly.</p>
