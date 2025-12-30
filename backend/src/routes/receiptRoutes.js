@@ -16,16 +16,15 @@ import { createReceiptSchema, receiptIdParamSchema, claimReceiptSchema, updateRe
 
 const router = express.Router();
 
-// Rate limiting for receipt operations
 const receiptLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: { message: "Too many receipt requests, please try again later" },
 });
 
 const createReceiptLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 receipts per minute
+  windowMs: 60 * 1000,
+  max: 30,
   message: { message: "Too many receipts created, please slow down" },
 });
 

@@ -1,12 +1,6 @@
 /**
- * IST (Indian Standard Time) Timezone Utilities
- * All timestamps in this application must be in IST (UTC+05:30)
- * 
- * This module provides utilities to:
- * - Get current IST time
- * - Convert any date to IST
- * - Normalize incoming timestamps to IST
- * - Format dates for storage and display
+ * IST timezone utilities
+ * All timestamps in this app are stored and displayed in IST (UTC+05:30)
  */
 
 const IST_OFFSET_HOURS = 5;
@@ -14,8 +8,7 @@ const IST_OFFSET_MINUTES = 30;
 const IST_OFFSET_MS = (IST_OFFSET_HOURS * 60 + IST_OFFSET_MINUTES) * 60 * 1000;
 
 /**
- * Get current date/time in IST
- * @returns {Date} Current IST time as a Date object
+ * Current time in IST
  */
 export const getNowIST = () => {
   const now = new Date();
@@ -25,8 +18,6 @@ export const getNowIST = () => {
 
 /**
  * Convert any date to IST
- * @param {Date|string|number} date - Date to convert
- * @returns {Date} Date converted to IST
  */
 export const toIST = (date) => {
   if (!date) return getNowIST();
@@ -40,10 +31,7 @@ export const toIST = (date) => {
 };
 
 /**
- * Normalize incoming timestamp to IST for storage
- * Handles various input formats and ensures IST output
- * @param {Date|string|number} input - Input timestamp
- * @returns {Date} Normalized IST Date
+ * Normalize any timestamp input to IST for storage
  */
 export const normalizeToIST = (input) => {
   if (!input) return getNowIST();
@@ -72,9 +60,7 @@ export const normalizeToIST = (input) => {
 };
 
 /**
- * Format IST date as ISO string (YYYY-MM-DD)
- * @param {Date} date - Date in IST
- * @returns {string} ISO date string
+ * Format as YYYY-MM-DD
  */
 export const formatISTDate = (date) => {
   const d = date instanceof Date ? date : toIST(date);
@@ -85,9 +71,7 @@ export const formatISTDate = (date) => {
 };
 
 /**
- * Format IST time as HH:MM
- * @param {Date} date - Date in IST
- * @returns {string} Time string in HH:MM format
+ * Format as HH:MM
  */
 export const formatISTTime = (date) => {
   const d = date instanceof Date ? date : toIST(date);
@@ -97,9 +81,7 @@ export const formatISTTime = (date) => {
 };
 
 /**
- * Format IST date and time as ISO-like string
- * @param {Date} date - Date in IST
- * @returns {string} Full datetime string
+ * Full ISO-like datetime string
  */
 export const formatISTDateTime = (date) => {
   const d = date instanceof Date ? date : toIST(date);
@@ -107,29 +89,18 @@ export const formatISTDateTime = (date) => {
 };
 
 /**
- * Get IST date ranges for analytics
- * All ranges are in IST
- * @returns {Object} Object containing various IST date ranges
+ * Date ranges for analytics queries (all IST)
  */
 export const getISTDateRanges = () => {
   const now = getNowIST();
   
-  // Start of today in IST
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  
-  // Start of this month in IST
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-  
-  // Start of last month in IST
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
-  
-  // End of last month in IST
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-  
-  // Start of this year in IST
   const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
   
-  // Start of this week (Sunday) in IST
+  // Week starts Sunday
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - now.getDay());
   startOfWeek.setHours(0, 0, 0, 0);

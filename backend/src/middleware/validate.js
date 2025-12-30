@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
 
-// Generic request validator using Zod schemas for body/query/params.
+// Zod validation middleware
 export const validate = (schema) => (req, res, next) => {
 	try {
 		const { body = undefined, query = undefined, params = undefined } = schema;

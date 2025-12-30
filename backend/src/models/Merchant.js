@@ -69,9 +69,7 @@ const merchantSchema = new mongoose.Schema(
 			default: false,
 		},
 
-		// ==========================================
-		// ONBOARDING & PROFILE COMPLETION
-		// ==========================================
+		// Onboarding
 		isProfileComplete: {
 			type: Boolean,
 			default: false,
@@ -81,9 +79,7 @@ const merchantSchema = new mongoose.Schema(
 			default: 0,
 		},
 
-		// ==========================================
-		// BUSINESS PROFILE (Collected during onboarding)
-		// ==========================================
+		// Business profile
 		shopName: {
 			type: String,
 			trim: true,
@@ -108,16 +104,16 @@ const merchantSchema = new mongoose.Schema(
 			trim: true,
 		},
 		
-		// Detailed address
+		// Structured address
 		address: addressSchema,
 		
-		// Legacy simple address (for backward compatibility)
+		// Simple address (legacy)
 		addressLine: {
 			type: String,
 			trim: true,
 		},
 
-		// Operating hours for each day
+		// Weekly schedule
 		operatingHours: {
 			type: [operatingHoursSchema],
 			default: [
@@ -131,9 +127,7 @@ const merchantSchema = new mongoose.Schema(
 			],
 		},
 
-		// ==========================================
-		// RECEIPT CUSTOMIZATION
-		// ==========================================
+		// Receipt branding
 		receiptFooter: {
 			type: String,
 			trim: true,
@@ -159,9 +153,7 @@ const merchantSchema = new mongoose.Schema(
 			trim: true,
 		},
 
-		// ==========================================
-		// OTP & VERIFICATION FIELDS
-		// ==========================================
+		// OTP fields
 		otpCodeHash: {
 			type: String,
 			select: false,
@@ -179,9 +171,7 @@ const merchantSchema = new mongoose.Schema(
 			type: Date,
 			select: false,
 		},
-		// ==========================================
-		// REFRESH TOKEN FIELDS
-		// ==========================================
+		// Session tokens
 		refreshToken: {
 			type: String,
 			select: false,
@@ -208,7 +198,7 @@ merchantSchema.pre("save", async function hashPassword(next) {
 	next();
 });
 
-// Auto-generate unique merchant code
+// Generate unique 6-char merchant code
 merchantSchema.pre("save", async function generateMerchantCode(next) {
 	if (this.merchantCode) return next();
 
@@ -216,7 +206,7 @@ merchantSchema.pre("save", async function generateMerchantCode(next) {
 	let code;
 	let exists = true;
 
-	// Keep generating until we find a unique code
+	// Keep trying until unique
 	while (exists) {
 		code = "";
 		for (let i = 0; i < 6; i++) {
@@ -234,13 +224,13 @@ merchantSchema.methods.comparePassword = function comparePassword(candidate) {
 	return bcrypt.compare(candidate, this.password);
 };
 
-// Database indexes for query optimization
+// Indexes
 merchantSchema.index({ email: 1 });
 merchantSchema.index({ merchantCode: 1 });
-merchantSchema.index({ shopName: "text" }); // Text search on shop name
+merchantSchema.index({ shopName: "text" });
 merchantSchema.index({ isVerified: 1 });
-merchantSchema.index({ isProfileComplete: 1 }); // Quick lookup for onboarding status
-merchantSchema.index({ businessCategory: 1 }); // Filter by business type
+merchantSchema.index({ isProfileComplete: 1 });
+merchantSchema.index({ businessCategory: 1 });
 merchantSchema.index({ createdAt: -1 });
 
 const Merchant = mongoose.model("Merchant", merchantSchema);

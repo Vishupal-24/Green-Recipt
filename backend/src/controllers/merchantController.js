@@ -2,9 +2,7 @@ import Merchant from "../models/Merchant.js";
 import Category from "../models/Category.js";
 import Item from "../models/Item.js";
 
-// ==========================================
-// MERCHANT ONBOARDING OPERATIONS
-// ==========================================
+// Merchant onboarding
 
 /**
  * GET /api/merchant/onboarding/status

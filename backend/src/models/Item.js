@@ -36,14 +36,14 @@ const itemSchema = new mongoose.Schema(
 			default: "piece",
 			enum: ["piece", "kg", "g", "l", "ml", "dozen", "pack", "plate", "cup", "glass", "serving", "other"],
 		},
-		// Stock management
+		// Stock
 		isAvailable: {
 			type: Boolean,
 			default: true,
 		},
 		stockQuantity: {
 			type: Number,
-			default: null, // null means unlimited/not tracked
+			default: null, // null = unlimited
 			min: 0,
 		},
 		lowStockThreshold: {
@@ -51,7 +51,7 @@ const itemSchema = new mongoose.Schema(
 			default: 10,
 			min: 0,
 		},
-		// Pricing options
+		// Discounts
 		discountPrice: {
 			type: Number,
 			min: 0,
@@ -60,7 +60,7 @@ const itemSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
-		// Display & organization
+		// Display
 		displayOrder: {
 			type: Number,
 			default: 0,
@@ -69,7 +69,7 @@ const itemSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 		},
-		// Item variants (e.g., size, color)
+		// Variants (size, etc.)
 		hasVariants: {
 			type: Boolean,
 			default: false,
@@ -81,7 +81,7 @@ const itemSchema = new mongoose.Schema(
 				isAvailable: { type: Boolean, default: true },
 			},
 		],
-		// Tags for filtering
+		// Tags
 		tags: [
 			{
 				type: String,
@@ -89,7 +89,7 @@ const itemSchema = new mongoose.Schema(
 				lowercase: true,
 			},
 		],
-		// Metadata
+		// Identifiers
 		barcode: {
 			type: String,
 			trim: true,
@@ -100,7 +100,7 @@ const itemSchema = new mongoose.Schema(
 			trim: true,
 			sparse: true,
 		},
-		// Tax configuration
+		// Tax (percentage)
 		taxRate: {
 			type: Number,
 			default: 0, // Percentage
@@ -115,9 +115,9 @@ const itemSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Compound indexes for merchant-specific queries
+// Indexes
 itemSchema.index({ merchantId: 1, categoryId: 1 });
-itemSchema.index({ merchantId: 1, name: "text" }); // Text search
+itemSchema.index({ merchantId: 1, name: "text" });
 itemSchema.index({ merchantId: 1, isAvailable: 1 });
 itemSchema.index({ merchantId: 1, isActive: 1 });
 itemSchema.index({ merchantId: 1, displayOrder: 1 });
@@ -125,7 +125,7 @@ itemSchema.index({ merchantId: 1, barcode: 1 }, { sparse: true });
 itemSchema.index({ merchantId: 1, sku: 1 }, { sparse: true });
 itemSchema.index({ merchantId: 1, tags: 1 });
 
-// Virtual for effective price (considers discounts)
+// Price after discount
 itemSchema.virtual("effectivePrice").get(function () {
 	if (this.isDiscounted && this.discountPrice !== undefined && this.discountPrice !== null) {
 		return this.discountPrice;
@@ -133,7 +133,7 @@ itemSchema.virtual("effectivePrice").get(function () {
 	return this.price;
 });
 
-// Virtual for stock status
+// Stock status derived from quantity
 itemSchema.virtual("stockStatus").get(function () {
 	if (this.stockQuantity === null) return "unlimited";
 	if (this.stockQuantity === 0) return "out_of_stock";
@@ -141,7 +141,6 @@ itemSchema.virtual("stockStatus").get(function () {
 	return "in_stock";
 });
 
-// Ensure virtuals are included in JSON output
 itemSchema.set("toJSON", { virtuals: true });
 itemSchema.set("toObject", { virtuals: true });
 

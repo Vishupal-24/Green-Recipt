@@ -526,11 +526,7 @@ export const updateProfile = async (req, res) => {
 
 export const requestOtp = async (req, res) => {
   try {
-    /*
-     * OTP flow disabled intentionally; keep prior logic commented for reference.
-     * // const { email, role = "customer" } = req.body;
-     * // ... legacy OTP generation & send...
-     */
+    // OTP flow disabled - just return success message
     return res.json({ message: "If an account exists, a verification code has been sent." });
   } catch (error) {
     console.error("requestOtp error", error);
@@ -540,12 +536,7 @@ export const requestOtp = async (req, res) => {
 
 export const verifyOtp = async (req, res) => {
   try {
-    /*
-     * OTP verification disabled; keep legacy logic for reference but do not expose this state to end users.
-     * // const { email, role = "customer", code } = req.body;
-     * // ... legacy verification logic ...
-     */
-
+    // OTP verification disabled - auto-approve
     return res.json({ message: "Account verified." });
   } catch (error) {
     console.error("verifyOtp error", error);
@@ -707,7 +698,7 @@ export const refreshAccessToken = async (req, res) => {
     const newRefreshToken = generateRefreshToken(account);
     await persistRefreshToken(account, newRefreshToken);
 
-    // Set new refresh token as HTTP-only cookie
+    // Update cookie
     res.cookie("refreshToken", newRefreshToken, COOKIE_OPTIONS);
 
     res.json({
@@ -723,15 +714,15 @@ export const refreshAccessToken = async (req, res) => {
 };
 
 /**
- * Logout - invalidate refresh token
+ * Logout and invalidate refresh token
  * POST /auth/logout
  */
 export const logout = async (req, res) => {
   try {
-    // Read refresh token from cookie (primary) or request body (fallback)
+    // Cookie first, body fallback
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-    // Always clear the cookie
+    // Clear cookie regardless
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -740,20 +731,20 @@ export const logout = async (req, res) => {
     });
 
     if (!refreshToken) {
-      // Even without refresh token, return success (idempotent logout)
+      // No token but still succeed (idempotent)
       return res.json({ message: "Logged out successfully" });
     }
 
-    // Try to decode the refresh token to find the account
+    // Decode token to find account
     let decoded;
     try {
       decoded = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET);
     } catch (error) {
-      // Token invalid/expired, but still return success
+      // Bad token - still succeed
       return res.json({ message: "Logged out successfully" });
     }
 
-    // Find and clear the refresh token
+    // Clear stored token
     const Model = decoded.role === "merchant" ? Merchant : User;
     const account = await Model.findById(decoded.id).select("+refreshToken");
 
@@ -764,13 +755,13 @@ export const logout = async (req, res) => {
     res.json({ message: "Logged out successfully" });
   } catch (error) {
     console.error("logout error", error);
-    // Still return success for logout
+    // Always succeed for logout
     res.json({ message: "Logged out successfully" });
   }
 };
 
 /**
- * Logout from all devices - invalidate all sessions
+ * Logout from all devices
  * POST /auth/logout-all
  */
 export const logoutAll = async (req, res) => {
@@ -782,7 +773,7 @@ export const logoutAll = async (req, res) => {
       return res.status(404).json({ message: "Account not found" });
     }
 
-    // Increment token version to invalidate all existing tokens
+    // Bump version to invalidate all tokens
     account.tokenVersion = (account.tokenVersion || 0) + 1;
     account.refreshToken = undefined;
     account.refreshTokenExpiry = undefined;
@@ -796,7 +787,7 @@ export const logoutAll = async (req, res) => {
 };
 
 /**
- * Validate token and return session info
+ * Validate token and return user info
  * GET /auth/session
  */
 export const getSession = async (req, res) => {

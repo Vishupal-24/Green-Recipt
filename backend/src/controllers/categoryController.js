@@ -1,9 +1,7 @@
 import Category from "../models/Category.js";
 import Item from "../models/Item.js";
 
-// ==========================================
-// CATEGORY CRUD OPERATIONS
-// ==========================================
+// Category CRUD
 
 /**
  * GET /api/merchant/categories

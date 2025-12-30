@@ -30,7 +30,7 @@ const categorySchema = new mongoose.Schema(
 		color: {
 			type: String,
 			trim: true,
-			default: "#10b981", // Default emerald color
+			default: "#10b981",
 		},
 		icon: {
 			type: String,
@@ -40,12 +40,12 @@ const categorySchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-// Compound index for merchant-specific category queries
+// Unique category per merchant
 categorySchema.index({ merchantId: 1, name: 1 }, { unique: true });
 categorySchema.index({ merchantId: 1, displayOrder: 1 });
 categorySchema.index({ merchantId: 1, isActive: 1 });
 
-// Virtual to get items count (populated when needed)
+// Virtual item count
 categorySchema.virtual("itemCount", {
 	ref: "Item",
 	localField: "_id",
@@ -53,7 +53,6 @@ categorySchema.virtual("itemCount", {
 	count: true,
 });
 
-// Ensure virtuals are included in JSON output
 categorySchema.set("toJSON", { virtuals: true });
 categorySchema.set("toObject", { virtuals: true });
 

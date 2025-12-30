@@ -59,9 +59,7 @@ const userSchema = new mongoose.Schema(
 			type: Date,
 			select: false,
 		},
-		// ==========================================
-		// REFRESH TOKEN FIELDS
-		// ==========================================
+		// Session tokens
 		refreshToken: {
 			type: String,
 			select: false,
@@ -92,11 +90,11 @@ userSchema.methods.comparePassword = function comparePassword(candidate) {
 	return bcrypt.compare(candidate, this.password);
 };
 
-// Database indexes for query optimization
+// Indexes
 userSchema.index({ email: 1 });
 userSchema.index({ isVerified: 1 });
 userSchema.index({ createdAt: -1 });
-userSchema.index({ refreshToken: 1 }); // For token lookup during refresh
+userSchema.index({ refreshToken: 1 });
 
 const User = mongoose.model("User", userSchema);
 

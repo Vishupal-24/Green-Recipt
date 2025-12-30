@@ -48,7 +48,7 @@ const otpLimiter = rateLimit({
 	legacyHeaders: false,
 });
 
-// Stricter rate limit for token refresh to prevent abuse
+// Tighter limit for token refresh
 const refreshLimiter = rateLimit({
 	windowMs: 60 * 1000, // 1 minute
 	max: 10, // 10 refresh attempts per minute
@@ -68,22 +68,22 @@ router.get("/verify/:token", verifyEmail);
 router.post('/forgot-password', otpLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', otpLimiter, validate(resetPasswordSchema), resetPassword);
 
-// Token refresh route (public - uses refresh token for auth)
+// Token refresh (uses cookie, no access token needed)
 router.post('/refresh', refreshLimiter, refreshAccessToken);
 
-// Logout route (public - can work without access token)
+// Logout (public)
 router.post('/logout', logout);
 
-// Session validation (requires valid access token)
+// Session check (protected)
 router.get('/session', protect, getSession);
 
-// Protected routes (require valid access token)
+// Profile routes (protected)
 router.get('/me', protect, getProfile);
 router.patch('/me', protect, validate(updateProfileSchema), updateProfile);
 router.post('/change-password', protect, validate(changePasswordSchema), changePassword);
 router.delete('/me', protect, deleteAccount);
 
-// Logout from all devices (requires valid access token)
+// Logout all devices (protected)
 router.post('/logout-all', protect, logoutAll);
 
 export default router;

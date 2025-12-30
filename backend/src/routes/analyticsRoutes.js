@@ -8,7 +8,7 @@ import { protect, requireRole } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Rate limiting for analytics (expensive queries)
+// Tighter limit - analytics queries are expensive
 const analyticsLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 20, // 20 requests per minute

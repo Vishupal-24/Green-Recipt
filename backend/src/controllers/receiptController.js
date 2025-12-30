@@ -94,7 +94,7 @@ export const createReceipt = async (req, res) => {
     const items = normalizeItems(rawItems);
     const computedTotal = computeTotal(items);
 
-    // For uploads, allow providedTotal without items
+    // For uploads without items, use provided total
     const finalTotal = source === "upload" && typeof providedTotal === "number" 
       ? providedTotal 
       : computedTotal;
@@ -104,14 +104,14 @@ export const createReceipt = async (req, res) => {
     }
 
     let merchant = null;
-    // For customer uploads, merchant is optional
+    // Merchant is optional for customer uploads
     if (source !== "upload" || resolvedMerchantId || resolvedMerchantCode) {
       if (resolvedMerchantId) {
         merchant = await Merchant.findById(resolvedMerchantId).lean();
       } else if (resolvedMerchantCode) {
         merchant = await Merchant.findOne({ merchantCode: resolvedMerchantCode }).lean();
       }
-      // Only require merchant for non-upload sources
+      // Non-upload sources require merchant
       if (!merchant && source !== "upload") {
         return res.status(400).json({ message: "Merchant not found" });
       }
@@ -126,7 +126,7 @@ export const createReceipt = async (req, res) => {
       customerSnapshot = { name: user.name, email: user.email };
     }
 
-    // Build merchant snapshot - use merchant data if available, otherwise use provided name
+    // Snapshot merchant data (or use provided name)
     const merchantSnapshot = merchant 
       ? {
           shopName: merchant.shopName,
@@ -155,7 +155,7 @@ export const createReceipt = async (req, res) => {
       source,
       paymentMethod,
       status,
-      // Normalize transaction date to IST
+      // Normalize to IST
       transactionDate: normalizeToIST(transactionDate),
       note,
       imageUrl,
@@ -166,7 +166,7 @@ export const createReceipt = async (req, res) => {
       customerSnapshot,
     });
 
-    // Clear analytics cache for affected users so insights update immediately
+    // Update analytics cache
     if (merchant?._id) {
       clearAnalyticsCache(merchant._id.toString());
     }
@@ -260,11 +260,11 @@ export const markReceiptPaid = async (req, res) => {
     if (paymentMethod && ["upi", "cash", "card", "other"].includes(paymentMethod)) {
       receipt.paymentMethod = paymentMethod;
     }
-    receipt.paidAt = getNowIST(); // Record when payment was confirmed (IST)
+    receipt.paidAt = getNowIST();
     
     await receipt.save();
 
-    // Clear analytics cache so insights update immediately with new payment data
+    // Invalidate cache
     clearAnalyticsCache(req.user.id);
     if (receipt.userId) {
       clearAnalyticsCache(receipt.userId.toString());

@@ -7,8 +7,7 @@ if (!JWT_SECRET) {
 }
 
 /**
- * Authentication middleware
- * Verifies JWT access token and attaches user info to request
+ * Verify JWT and attach user to request
  */
 export const protect = (req, res, next) => {
   const authHeader = req.headers.authorization || "";
@@ -30,7 +29,7 @@ export const protect = (req, res, next) => {
     };
     return next();
   } catch (error) {
-    // Differentiate between expired and invalid tokens
+    // Handle expired vs invalid tokens differently
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({ 
         message: "Access token expired",
@@ -45,8 +44,7 @@ export const protect = (req, res, next) => {
 };
 
 /**
- * Role-based access control middleware
- * Must be used after protect middleware
+ * Require specific role(s) - use after protect()
  */
 export const requireRole = (...roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.role)) {
@@ -59,8 +57,7 @@ export const requireRole = (...roles) => (req, res, next) => {
 };
 
 /**
- * Optional authentication middleware
- * Attaches user info if token is valid, but doesn't block if missing/invalid
+ * Optional auth - continues even if token missing/invalid
  */
 export const optionalAuth = (req, res, next) => {
   const authHeader = req.headers.authorization || "";
@@ -78,7 +75,7 @@ export const optionalAuth = (req, res, next) => {
       tokenVersion: decoded.tokenVersion 
     };
   } catch (error) {
-    // Token invalid, but continue without user
+    // Invalid token - continue without user
   }
   
   return next();

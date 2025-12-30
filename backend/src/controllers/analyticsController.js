@@ -4,10 +4,9 @@ import { getISTDateRanges, getNowIST, toIST, formatISTDateTime } from "../utils/
 
 const IST_TIMEZONE = "Asia/Kolkata";
 
-// ============ SIMPLE IN-MEMORY CACHE ============
-// In production, use Redis for distributed caching
+// In-memory cache (swap for Redis in production)
 const analyticsCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000; // 5 min
 
 const getCachedOrFetch = async (cacheKey, fetchFn) => {
   const cached = analyticsCache.get(cacheKey);
@@ -20,13 +19,13 @@ const getCachedOrFetch = async (cacheKey, fetchFn) => {
   return data;
 };
 
-// Clear cache for a user (call after creating receipts)
+// Invalidate cache after receipt creation
 export const clearAnalyticsCache = (userId) => {
   analyticsCache.delete(`customer_${userId}`);
   analyticsCache.delete(`merchant_${userId}`);
 };
 
-// Helper to get date ranges - ALL IN IST
+// All date ranges are IST
 const getDateRanges = () => {
   return getISTDateRanges();
 };
@@ -35,7 +34,7 @@ export const getCustomerAnalytics = async (req, res) => {
   try {
     const cacheKey = `customer_${req.user.id}`;
     
-    // Check for force refresh query param
+    // Allow ?refresh=true to bypass cache
     const forceRefresh = req.query.refresh === 'true';
     if (forceRefresh) {
       analyticsCache.delete(cacheKey);
@@ -50,7 +49,7 @@ export const getCustomerAnalytics = async (req, res) => {
       $or: [{ excludeFromStats: { $exists: false } }, { excludeFromStats: false }] 
     };
 
-    // Run all aggregations in parallel for performance
+    // Parallel queries for performance
     const [
       totalAll,
       thisMonth,
@@ -102,12 +101,12 @@ export const getCustomerAnalytics = async (req, res) => {
         { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
       ]),
 
-      // Category breakdown (this month) - uses receipt category which falls back to merchant businessCategory
+      // Category breakdown - falls back to merchant category
       Receipt.aggregate([
         { $match: { ...baseMatch, transactionDate: { $gte: startOfMonth } } },
         {
           $addFields: {
-            // Use category if set, otherwise use merchant's businessCategory, fallback to "general"
+            // Prefer receipt category, fall back to merchant category
             resolvedCategory: {
               $cond: {
                 if: { $and: [{ $ne: ["$category", null] }, { $ne: ["$category", ""] }, { $ne: ["$category", "general"] }] },
@@ -129,7 +128,7 @@ export const getCustomerAnalytics = async (req, res) => {
         { $limit: 10 },
       ]),
 
-      // Payment method breakdown
+      // Payment methods
       Receipt.aggregate([
         { $match: { ...baseMatch, transactionDate: { $gte: startOfMonth } } },
         {
@@ -142,7 +141,7 @@ export const getCustomerAnalytics = async (req, res) => {
         { $sort: { total: -1 } },
       ]),
 
-      // Top merchants (this month) - includes businessCategory for display
+      // Top merchants this month
       Receipt.aggregate([
         { $match: { ...baseMatch, transactionDate: { $gte: startOfMonth } } },
         {
@@ -160,7 +159,7 @@ export const getCustomerAnalytics = async (req, res) => {
         { $limit: 5 },
       ]),
 
-      // Daily spending (last 30 days)
+      // Daily spending (30 days)
       Receipt.aggregate([
         { 
           $match: { 
@@ -178,7 +177,7 @@ export const getCustomerAnalytics = async (req, res) => {
         { $sort: { _id: 1 } },
       ]),
 
-      // Monthly trend (last 6 months)
+      // Monthly trend (6 months)
       Receipt.aggregate([
         { 
           $match: { 
@@ -199,14 +198,14 @@ export const getCustomerAnalytics = async (req, res) => {
         { $sort: { "_id.year": 1, "_id.month": 1 } },
       ]),
 
-      // Recent receipts for activity feed
+      // Recent activity
       Receipt.find(baseMatch)
         .sort({ transactionDate: -1 })
         .limit(5)
         .select("merchantSnapshot.shopName merchantSnapshot.businessCategory total transactionDate category paymentMethod")
         .lean(),
 
-      // Top items across all receipts (this month)
+      // Top items this month
       Receipt.aggregate([
         { $match: { ...baseMatch, transactionDate: { $gte: startOfMonth } } },
         { $unwind: "$items" },
@@ -231,7 +230,7 @@ export const getCustomerAnalytics = async (req, res) => {
     const daysInMonth = now.getDate();
     const avgPerDay = daysInMonth > 0 ? Math.round(thisMonthTotal / daysInMonth) : 0;
     
-    // Percentage changes
+    // Period comparisons
     const monthOverMonthChange = lastMonthTotal > 0 
       ? Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100) 
       : 0;
@@ -239,7 +238,7 @@ export const getCustomerAnalytics = async (req, res) => {
       ? Math.round(((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100) 
       : 0;
 
-    // Budget insights (simple heuristic)
+    // Month-end projection
     const projectedMonthEnd = avgPerDay * new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
     return {
@@ -355,7 +354,7 @@ export const getMerchantAnalytics = async (req, res) => {
   try {
     const cacheKey = `merchant_${req.user.id}`;
     
-    // Check for force refresh query param
+    // Allow ?refresh=true to bypass cache
     const forceRefresh = req.query.refresh === 'true';
     if (forceRefresh) {
       analyticsCache.delete(cacheKey);

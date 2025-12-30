@@ -34,9 +34,7 @@ const router = express.Router();
 router.use(protect);
 router.use(requireRole("merchant"));
 
-// ==========================================
-// ONBOARDING ROUTES
-// ==========================================
+// Onboarding
 router.get("/onboarding/status", getOnboardingStatus);
 router.post("/onboarding/business-info", saveBusinessInfo);
 router.post("/onboarding/operating-hours", saveOperatingHours);
@@ -45,23 +43,17 @@ router.post("/onboarding/items", saveItems);
 router.post("/onboarding/complete", completeOnboarding);
 router.post("/onboarding/skip", skipOnboarding);
 
-// ==========================================
-// PROFILE ROUTES
-// ==========================================
+// Profile
 router.get("/profile/full", getFullProfile);
 
-// ==========================================
-// CATEGORY ROUTES
-// ==========================================
+// Categories
 router.get("/categories", getCategories);
 router.post("/categories", createCategory);
 router.patch("/categories/reorder", reorderCategories);
 router.patch("/categories/:id", updateCategory);
 router.delete("/categories/:id", deleteCategory);
 
-// ==========================================
-// ITEM ROUTES
-// ==========================================
+// Items
 router.get("/items", getItems);
 router.post("/items", createItem);
 router.post("/items/bulk", createItemsBulk);
