@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { resetPassword as resetPasswordApi } from '../services/api.js';
+import useForceLightMode from "../hooks/useForceLightMode";
 
 const ResetPassword = () => {
+  useForceLightMode();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || '';

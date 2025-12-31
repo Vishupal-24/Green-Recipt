@@ -1,8 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Store, User, ArrowRight } from "lucide-react";
+import useForceLightMode from "../../hooks/useForceLightMode";
 
 const AuthSelection = () => {
+  useForceLightMode();
   const navigate = useNavigate();
 
   return (

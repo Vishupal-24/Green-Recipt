@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import Logo from "../components/common/Logo";
+import useForceLightMode from "../hooks/useForceLightMode";
 
 const SignupSuccess = () => {
+  useForceLightMode();
   const location = useLocation();
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(10);

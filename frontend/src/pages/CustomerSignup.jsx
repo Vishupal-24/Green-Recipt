@@ -208,8 +208,10 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signupCustomer } from "../services/api.js";
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft, UserPlus } from "lucide-react"; 
+import useForceLightMode from "../hooks/useForceLightMode";
 
 const CustomerSignup = () => {
+  useForceLightMode();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",

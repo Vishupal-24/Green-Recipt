@@ -2,8 +2,10 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser, setSession } from "../services/api.js";
 import { Store, Briefcase, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import useForceLightMode from "../hooks/useForceLightMode";
 
 const MerchantLogin = () => {
+  useForceLightMode();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

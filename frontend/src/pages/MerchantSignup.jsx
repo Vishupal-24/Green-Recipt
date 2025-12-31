@@ -235,8 +235,10 @@ import {
   ArrowLeft,
   Building2,
 } from "lucide-react"; // 👈 Lucide Icons
+import useForceLightMode from "../hooks/useForceLightMode";
 
 const MerchantSignup = () => {
+  useForceLightMode();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     shopName: "",

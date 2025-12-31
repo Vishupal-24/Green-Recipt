@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { requestOtp, verifyOtpCode } from '../services/api.js';
+import useForceLightMode from "../hooks/useForceLightMode";
 
 const MerchantVerify = () => {
+  useForceLightMode();
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "business email";
