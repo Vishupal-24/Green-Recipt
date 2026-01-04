@@ -401,9 +401,7 @@ export const deleteCategory = (id, reassignTo = null) =>
   api.delete(`/merchant/categories/${id}${reassignTo ? `?reassignTo=${reassignTo}` : ''}`);
 export const reorderCategories = (categoryIds) => api.patch("/merchant/categories/reorder", { categoryIds });
 
-// ==========================================
-// ITEM APIs
-// ==========================================
+//Items API 
 export const fetchItems = (params = {}) => {
   const queryParams = new URLSearchParams();
   if (params.categoryId) queryParams.append('categoryId', params.categoryId);
