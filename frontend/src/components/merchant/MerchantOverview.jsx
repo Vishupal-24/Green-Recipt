@@ -363,7 +363,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { fetchMerchantReceipts, deleteReceipt as deleteReceiptApi } from "../../services/api";
-import { getNowIST } from "../../utils/timezone";
+import { getNowIST, formatISTDate, formatISTDateDisplay } from "../../utils/timezone";
 import { useTheme } from "../../contexts/ThemeContext";
 
 const MerchantOverview = () => {
@@ -436,10 +436,13 @@ const MerchantOverview = () => {
   };
 
   // Filter Logic
-  const todayStr = getNowIST().toISOString().split("T")[0];
+  // Use IST date for "Today" comparison to match backend
+  const todayStr = formatISTDate(getNowIST());
+  
   const todaysBills = sales.filter(
-    (bill) => toDateString(bill.date) === todayStr
+    (bill) => bill.date === todayStr
   );
+  
   const totalSales = todaysBills.reduce(
     (sum, bill) => sum + (bill.total ?? bill.amount ?? 0),
     0
@@ -514,7 +517,7 @@ const MerchantOverview = () => {
     const now = getNowIST();
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split("T")[0];
+    const sevenDaysAgoStr = formatISTDate(sevenDaysAgo);
 
     sales.forEach((bill) => {
       if (bill.date >= sevenDaysAgoStr && bill.items) {
@@ -609,11 +612,7 @@ const MerchantOverview = () => {
         <div className="text-right">
           <p className={`text-xs font-bold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('time.today')}</p>
           <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
-            {new Date().toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+            {formatISTDateDisplay(getNowIST())}
           </p>
         </div>
       </div>

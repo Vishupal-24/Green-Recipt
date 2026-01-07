@@ -3,46 +3,59 @@ import { z } from "zod";
 const objectIdRegex = /^[a-f\d]{24}$/i;
 const objectId = z.string().regex(objectIdRegex, "Invalid id");
 
-const money = z
+// Allow null/undefined for optional money fields
+const money = z.coerce
   .number({ invalid_type_error: "Must be a number" })
-  .min(0, "Price must be positive");
+  .min(0, "Price must be positive")
+  .nullable()
+  .optional();
 
-const quantity = z
+// Allow null/undefined for optional quantity fields  
+const quantity = z.coerce
   .number({ invalid_type_error: "Must be a number" })
   .int("Quantity must be an integer")
-  .min(1, "Quantity must be at least 1");
+  .min(1, "Quantity must be at least 1")
+  .nullable()
+  .optional();
 
 export const createReceiptSchema = {
   body: z.object({
-    userId: objectId.optional(),
-    merchantId: objectId.optional(),
-    merchantCode: z.string().trim().optional(),
+    userId: objectId.optional().nullable(),
+    merchantId: objectId.optional().nullable(),
+    merchantCode: z.string().trim().optional().nullable(),
+    // merchantName is used when customer scans QR from unregistered merchant
+    merchantName: z.string().trim().max(200).optional().nullable(),
+    // mid is an alias for merchantCode (short key from QR)
+    mid: z.string().trim().optional().nullable(),
     items: z
       .array(
         z.object({
-          name: z.string().min(1, "Item name is required"),
-          unitPrice: money.optional(),
-          quantity: quantity.optional(),
+          name: z.string().optional().nullable(),
+          unitPrice: money,
+          quantity: quantity,
           // Allow QR short keys; controller will normalize
-          n: z.string().optional(),
-          p: z.number().optional(),
-          q: z.number().optional(),
-        })
+          n: z.string().optional().nullable(),
+          p: z.coerce.number().optional().nullable(),
+          q: z.coerce.number().optional().nullable(),
+          price: z.coerce.number().optional().nullable(),
+          qty: z.coerce.number().optional().nullable(),
+        }).passthrough() // Allow extra fields
       )
       .default([]),
     source: z.enum(["qr", "upload", "manual"]).default("qr"),
     paymentMethod: z.enum(["upi", "card", "cash", "other"]).default("upi"),
-    status: z.enum(["completed", "pending", "void"]).optional(),
+    status: z.enum(["completed", "pending", "void"]).optional().nullable(),
     transactionDate: z
       .union([z.string(), z.date()])
-      .optional(),
-    note: z.string().trim().max(500).optional(),
-    imageUrl: z.string().url().optional(),
-    excludeFromStats: z.boolean().optional(),
-    footer: z.string().trim().max(200).optional(),
-    category: z.string().trim().max(100).optional(),
-    total: money.optional(),
-  }),
+      .optional()
+      .nullable(),
+    note: z.string().trim().max(500).optional().nullable(),
+    imageUrl: z.string().optional().nullable(), // Allow base64 data URLs too, not just http URLs
+    excludeFromStats: z.boolean().optional().nullable(),
+    footer: z.string().trim().max(200).optional().nullable(),
+    category: z.string().trim().max(100).optional().nullable(),
+    total: z.coerce.number().min(0).optional().nullable(),
+  }).passthrough(), // Allow extra fields from QR codes
 };
 
 export const claimReceiptSchema = {

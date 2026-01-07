@@ -1771,7 +1771,7 @@ import { createReceipt, markReceiptPaid } from '../../services/api';
 import { getTodayIST, formatISTDisplay, getNowIST } from '../../utils/timezone';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const MerchantBilling = ({ inventory }) => {
+const MerchantBilling = ({ inventory, profile }) => {
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
@@ -1792,10 +1792,19 @@ const MerchantBilling = ({ inventory }) => {
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
   // Load Merchant Profile
-  const merchantProfile = JSON.parse(localStorage.getItem('merchantProfile')) || { 
-    shopName: "GreenReceipt Shop", 
-    merchantId: "GR-DEMO" 
-  };
+  const merchantProfile = useMemo(() => {
+    if (profile) {
+      return {
+        shopName: profile.shopName || "GreenReceipt Shop",
+        merchantId: profile.id, // Use real ID
+        receiptFooter: profile.receiptFooter
+      };
+    }
+    return JSON.parse(localStorage.getItem('merchantProfile')) || { 
+      shopName: "GreenReceipt Shop", 
+      merchantId: "GR-DEMO" 
+    };
+  }, [profile]);
 
   // Calculations
   const cartTotal = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);

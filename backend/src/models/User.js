@@ -90,8 +90,7 @@ userSchema.methods.comparePassword = function comparePassword(candidate) {
 	return bcrypt.compare(candidate, this.password);
 };
 
-// Indexes
-userSchema.index({ email: 1 });
+// Indexes - only using schema.index() to avoid duplicates
 userSchema.index({ isVerified: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ refreshToken: 1 });

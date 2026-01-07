@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const itemSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    unitPrice: { type: Number, required: true, min: 0 },
-    quantity: { type: Number, required: true, min: 1, default: 1 },
+    name: { type: String, required: true, trim: true, default: "Item" },
+    unitPrice: { type: Number, required: false, min: 0, default: 0 },
+    quantity: { type: Number, required: false, min: 1, default: 1 },
   },
   { _id: false }
 );

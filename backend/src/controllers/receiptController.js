@@ -95,38 +95,56 @@ export const createReceipt = async (req, res) => {
     const computedTotal = computeTotal(items);
 
     // For uploads without items, use provided total
-    const finalTotal = source === "upload" && typeof providedTotal === "number" 
+    // For QR scans, also allow provided total if items are empty or total is explicitly provided
+    const finalTotal = (source === "upload" || source === "qr") && typeof providedTotal === "number" 
       ? providedTotal 
-      : computedTotal;
+      : computedTotal || providedTotal || 0;
 
-    if (source !== "upload" && typeof providedTotal === "number" && Math.abs(providedTotal - computedTotal) > 0.01) {
+    // Only validate total vs items for manual entries (not QR or upload)
+    // QR codes may have pre-calculated totals that include taxes/discounts not in items
+    if (source === "manual" && typeof providedTotal === "number" && items.length > 0 && Math.abs(providedTotal - computedTotal) > 0.01) {
       return res.status(400).json({ message: "Total does not match items sum" });
     }
 
     let merchant = null;
-    // Merchant is optional for customer uploads
-    if (source !== "upload" || resolvedMerchantId || resolvedMerchantCode) {
+    // Try to find merchant in database if we have an ID or code
+    if (resolvedMerchantId || resolvedMerchantCode) {
       if (resolvedMerchantId) {
         merchant = await Merchant.findById(resolvedMerchantId).lean();
       } else if (resolvedMerchantCode) {
         merchant = await Merchant.findOne({ merchantCode: resolvedMerchantCode }).lean();
       }
-      // Non-upload sources require merchant
-      if (!merchant && source !== "upload") {
-        return res.status(400).json({ message: "Merchant not found" });
-      }
+    }
+    
+    // For QR scans, we allow saving even if merchant is not found in our system
+    // The customer can still record their transaction with merchantName from QR
+    // Only merchants creating receipts MUST be registered
+    if (!merchant && req.user.role === "merchant" && source !== "upload") {
+      return res.status(400).json({ message: "Merchant not found" });
     }
 
-    let customerSnapshot;
+    // Build customer snapshot - don't fail if user lookup fails
+    // If user is authenticated (passed protect middleware), they are valid
+    let customerSnapshot = null;
     if (userId) {
-      const user = await User.findById(userId).lean();
-      if (!user) {
-        return res.status(400).json({ message: "Customer not found" });
+      try {
+        const user = await User.findById(userId).lean();
+        if (user) {
+          customerSnapshot = { name: user.name, email: user.email };
+        } else {
+          // User authenticated but not found in DB - create minimal snapshot
+          // This can happen in edge cases, but we should still save the receipt
+          customerSnapshot = { name: "Customer", email: null };
+          console.log(`Warning: Customer ${userId} not found in DB but authenticated`);
+        }
+      } catch (lookupError) {
+        // Database error during lookup - proceed with minimal snapshot
+        console.error("Customer lookup error:", lookupError.message);
+        customerSnapshot = { name: "Customer", email: null };
       }
-      customerSnapshot = { name: user.name, email: user.email };
     }
 
-    // Snapshot merchant data (or use provided name)
+    // Snapshot merchant data (or use provided name from QR code)
     const merchantSnapshot = merchant 
       ? {
           shopName: merchant.shopName,
@@ -140,8 +158,28 @@ export const createReceipt = async (req, res) => {
           businessCategory: merchant.businessCategory || "general",
         }
       : merchantName 
-        ? { shopName: merchantName, merchantCode: null, address: null, phone: null, logoUrl: null, receiptHeader: "", receiptFooter: "", brandColor: "#10b981", businessCategory: category || "general" }
-        : null;
+        ? { 
+            shopName: merchantName, 
+            merchantCode: resolvedMerchantCode || null, 
+            address: null, 
+            phone: null, 
+            logoUrl: null, 
+            receiptHeader: "", 
+            receiptFooter: footer || "Thank you!", 
+            brandColor: "#10b981", 
+            businessCategory: category || "general" 
+          }
+        : { 
+            shopName: "Unknown Merchant", 
+            merchantCode: null, 
+            address: null, 
+            phone: null, 
+            logoUrl: null, 
+            receiptHeader: "", 
+            receiptFooter: "", 
+            brandColor: "#10b981", 
+            businessCategory: "general" 
+          };
 
     const resolvedCategory = category || merchant?.businessCategory || "general";
 
@@ -176,8 +214,16 @@ export const createReceipt = async (req, res) => {
 
     res.status(201).json(mapReceiptToClient(receipt.toObject()));
   } catch (error) {
-    console.error("createReceipt error", error);
-    res.status(500).json({ message: "Failed to create receipt" });
+    console.error("createReceipt error:", error.message);
+    console.error("createReceipt error details:", error);
+    
+    // Return more specific error messages
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(e => e.message).join(', ');
+      return res.status(400).json({ message: `Validation error: ${messages}` });
+    }
+    
+    res.status(500).json({ message: error.message || "Failed to create receipt" });
   }
 };
 
@@ -257,9 +303,22 @@ export const markReceiptPaid = async (req, res) => {
 
     // Only merchant can finalize payment - this is the source of truth
     receipt.status = "completed";
+    
+    // Only update payment method if it's not already set to a specific type (upi/card/cash)
+    // or if the current one is 'other', OR if the merchant explicitly wants to change it.
+    // However, per requirements, we should respect the customer's selection if possible.
+    // If the receipt already has a valid payment method (set by customer), we keep it unless it was 'other'.
+    const currentMethod = receipt.paymentMethod;
+    const isGeneric = !currentMethod || currentMethod === 'other';
+    
     if (paymentMethod && ["upi", "cash", "card", "other"].includes(paymentMethod)) {
-      receipt.paymentMethod = paymentMethod;
+      if (isGeneric) {
+         receipt.paymentMethod = paymentMethod;
+      }
+      // If it's already specific (e.g. 'upi'), we don't overwrite it with merchant's input
+      // unless we want to allow correction. But user asked to respect customer's choice.
     }
+    
     receipt.paidAt = getNowIST();
     
     await receipt.save();

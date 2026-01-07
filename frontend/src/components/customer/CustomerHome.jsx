@@ -109,7 +109,33 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
       }
     };
     load();
-    return () => { mounted = false; };
+
+    // Listen for receipt updates from scanner or other sources
+    const handleReceiptUpdate = () => {
+      // Immediately update from localStorage for instant UI feedback
+      const saved = localStorage.getItem('customerReceipts');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (mounted && Array.isArray(parsed)) {
+            setReceipts(parsed);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      // Then also fetch fresh data from backend
+      load();
+    };
+    
+    window.addEventListener('customer-receipts-updated', handleReceiptUpdate);
+    window.addEventListener('storage', handleReceiptUpdate);
+
+    return () => { 
+      mounted = false; 
+      window.removeEventListener('customer-receipts-updated', handleReceiptUpdate);
+      window.removeEventListener('storage', handleReceiptUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -207,6 +233,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
       setManualMerchant("");
       setManualDate(getTodayIST()); // Reset to today IST
       setIncludeInStats(true);
+      window.dispatchEvent(new Event("customer-receipts-updated"));
       toast.success(t('receipts.uploadSuccess'));
     } catch (error) {
       console.error("Upload error:", error);

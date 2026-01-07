@@ -46,7 +46,22 @@ const CustomerReceipts = () => {
     };
     load();
 
-    const handleUpdate = () => load();
+    const handleUpdate = () => {
+      // Immediately update from localStorage for instant UI feedback
+      const saved = localStorage.getItem('customerReceipts');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (mounted && Array.isArray(parsed)) {
+            setReceipts(parsed);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+      // Then also fetch from backend to ensure sync
+      load();
+    };
     window.addEventListener('customer-receipts-updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
 

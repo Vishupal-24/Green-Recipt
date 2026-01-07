@@ -147,7 +147,7 @@ const MerchantDashboard = () => {
                   {/* Main Dashboard Routes */}
                   <Route path="overview" element={<MerchantOverview />} />
                   <Route path="calendar" element={<MerchantCalendar />} />
-                  <Route path="billing" element={<MerchantBilling inventory={inventory} />} />
+                  <Route path="billing" element={<MerchantBilling inventory={inventory} profile={profile} />} />
                   <Route path="items" element={<MerchantItems />} />
                   <Route path="insights" element={<MerchantInsights />} />
                   <Route path="profile" element={<MerchantProfile />} />

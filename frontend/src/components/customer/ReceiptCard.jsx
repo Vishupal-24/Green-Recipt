@@ -85,12 +85,12 @@ const ReceiptCard = ({ data, onDelete, onUpdate, isDark: propIsDark }) => {
                 <Calendar size={10} className="md:w-3 md:h-3" />
                 {data.date} • {data.time}
               </p>
-              {isPaid && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${isDark ? 'bg-opacity-30' : ''} ${paymentInfo.bg} ${paymentInfo.color}`}>
-                  <paymentInfo.icon size={10} />
-                  {paymentInfo.label}
-                </span>
-              )}
+              {/* Show payment info even if pending, but mark as pending if not paid */}
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 ${isDark ? 'bg-opacity-30' : ''} ${paymentInfo.bg} ${paymentInfo.color}`}>
+                <paymentInfo.icon size={10} />
+                {paymentInfo.label}
+                {!isPaid && data.paymentMethod && ' (Pending)'}
+              </span>
             </div>
           </div>
           

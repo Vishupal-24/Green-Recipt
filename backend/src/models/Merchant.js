@@ -212,7 +212,6 @@ merchantSchema.pre("save", async function generateMerchantCode(next) {
 		for (let i = 0; i < 6; i++) {
 			code += chars.charAt(Math.floor(Math.random() * chars.length));
 		}
-merchantSchema.index({ refreshToken: 1 }); // For token lookup during refresh
 		exists = await mongoose.model("Merchant").findOne({ merchantCode: code });
 	}
 
@@ -224,14 +223,13 @@ merchantSchema.methods.comparePassword = function comparePassword(candidate) {
 	return bcrypt.compare(candidate, this.password);
 };
 
-// Indexes
-merchantSchema.index({ email: 1 });
-merchantSchema.index({ merchantCode: 1 });
+// Indexes - only using schema.index() to avoid duplicates with unique: true fields
 merchantSchema.index({ shopName: "text" });
 merchantSchema.index({ isVerified: 1 });
 merchantSchema.index({ isProfileComplete: 1 });
 merchantSchema.index({ businessCategory: 1 });
 merchantSchema.index({ createdAt: -1 });
+merchantSchema.index({ refreshToken: 1 }); // For token lookup during refresh
 
 const Merchant = mongoose.model("Merchant", merchantSchema);
 

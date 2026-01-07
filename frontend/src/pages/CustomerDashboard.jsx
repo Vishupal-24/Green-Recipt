@@ -10,6 +10,7 @@ import CustomerNotifications from '../components/customer/CustomerNotifications'
 import { useTheme } from '../contexts/ThemeContext';
 import { ScanLine, Bell, X, CheckCircle, AlertCircle, Smartphone, Banknote, Clock, ShoppingBag } from 'lucide-react';
 import { createReceipt, claimReceipt, fetchCustomerReceipts } from '../services/api';
+import toast from 'react-hot-toast';
 
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -73,27 +74,27 @@ const CustomerDashboard = () => {
         // 1. Parse the text from QR
         const receiptData = JSON.parse(rawText);
 
-        // 2. Validate GreenReceipt format
-        if (!receiptData.merchant || !receiptData.total) {
-          throw new Error("Invalid GreenReceipt QR");
+        // 2. Validate GreenReceipt format - only total is strictly required
+        if (typeof receiptData.total !== 'number' && !receiptData.total) {
+          throw new Error("Invalid GreenReceipt QR - missing total");
         }
 
         // 🟢 FIX: TRANSLATE SHORT KEYS BACK TO FULL KEYS
         const fixedItems = (receiptData.items || []).map((item) => {
-          const quantity = item.q || item.qty || item.quantity;
-          const unitPrice = item.p || item.price || item.unitPrice;
+          const quantity = item.q || item.qty || item.quantity || 1;
+          const unitPrice = item.p || item.price || item.unitPrice || 0;
+          const name = item.n || item.name || "Item";
           return {
-            name: item.n || item.name,
+            name,
             quantity,
             unitPrice,
-            qty: quantity,
-            price: unitPrice,
           };
         });
 
         // 3. Create Receipt Object with Fixed Items
         const newReceipt = {
           ...receiptData,
+          merchant: receiptData.merchant || receiptData.m || "Unknown Merchant",
           id: receiptData.id || `GR-${Date.now()}`,
           items: fixedItems,
           type: "qr",
@@ -104,7 +105,8 @@ const CustomerDashboard = () => {
         setScannedBillData(newReceipt);
         setScanResult("payment-choice"); // Show payment options immediately!
       } catch (err) {
-        console.log("Ignored invalid QR code or Scan Error");
+        console.error("QR Parse Error:", err);
+        toast.error("Invalid QR code format");
       }
     }
   };
@@ -119,57 +121,67 @@ const CustomerDashboard = () => {
 
     // Save receipt to customer's journal (status remains 'pending' until merchant confirms)
     try {
+      // Helper to check for Mongo ID
+      const isObjectId = (id) => /^[a-f\d]{24}$/i.test(id);
+
       const payload = {
-        merchantId: scannedBillData.merchantId,
-        merchantCode: scannedBillData.mid || scannedBillData.merchantCode,
+        // Validation: Only send merchantId if it's a valid ObjectId, otherwise backend might fail lookup
+        merchantId: (scannedBillData.merchantId && isObjectId(scannedBillData.merchantId)) ? scannedBillData.merchantId : null,
+        merchantCode: scannedBillData.mid || scannedBillData.merchantCode || null,
+        // Pass merchant name so backend can create snapshot even without registered merchant
+        merchantName: scannedBillData.merchant || scannedBillData.merchantName || "Unknown Merchant",
         items: scannedBillData.items,
         source: "qr",
-        // Note: This paymentMethod is customer's INTENT, not final - merchant will confirm
+        // This is the customer's selected payment method - will be preserved
         paymentMethod: method,
-        transactionDate: scannedBillData.date || getNowIST().toISOString(),
+        transactionDate: scannedBillData.date || new Date().toISOString(),
         total: scannedBillData.total,
-        note: scannedBillData.note,
-        footer: scannedBillData.footer,
-        // Bill stays PENDING until merchant confirms payment
-        status: "pending",
+        note: scannedBillData.note || "",
+        footer: scannedBillData.footer || "",
+        category: scannedBillData.category || "general",
+        // Customer's transaction is saved immediately as completed
+        status: "completed",
       };
 
-      const apiCall = scannedBillData.rid
+      // Only use claimReceipt if rid is a valid MongoDB ObjectId
+      // Dynamic QRs use "GR-..." IDs which should be created as new receipts
+      
+      const apiCall = (scannedBillData.rid && isObjectId(scannedBillData.rid))
         ? claimReceipt({ receiptId: scannedBillData.rid })
         : createReceipt(payload);
 
       const { data } = await apiCall;
-      const existing =
-        JSON.parse(localStorage.getItem("customerReceipts")) || [];
-      const merged = [
-        data,
-        ...existing.filter((r) => r.id !== data.id && r._id !== data.id),
-      ];
+      
+      // Update local storage with the real data from server
+      const existing = JSON.parse(localStorage.getItem("customerReceipts")) || [];
+      // Remove any temp/duplicate if exists
+      const filtered = existing.filter((r) => r.id !== data.id && r._id !== data.id);
+      const merged = [data, ...filtered];
+      
       localStorage.setItem("customerReceipts", JSON.stringify(merged));
       window.dispatchEvent(new Event("customer-receipts-updated"));
-    } catch (apiError) {
-      // Fallback to local storage
-      const existing =
-        JSON.parse(localStorage.getItem("customerReceipts")) || [];
-      if (!existing.find((r) => r.id === scannedBillData.id)) {
-        localStorage.setItem(
-          "customerReceipts",
-          JSON.stringify([
-            { ...scannedBillData, status: "pending" },
-            ...existing,
-          ])
-        );
-      }
-      window.dispatchEvent(new Event("customer-receipts-updated"));
-    }
+      
+      // Show success briefly then close
+      setScanResult("success");
+      toast.success("Receipt saved successfully!");
+      setTimeout(() => {
+        setIsScanning(false);
+        setActiveTab("receipts");
+        window.dispatchEvent(new Event("storage"));
+      }, 1500);
 
-    // Show success briefly then close
-    setScanResult("success");
-    setTimeout(() => {
-      setIsScanning(false);
-      setActiveTab("receipts");
-      window.dispatchEvent(new Event("storage"));
-    }, 1500);
+    } catch (apiError) {
+      console.error("Failed to save receipt:", apiError);
+      // Extract detailed error message
+      const errorMessage = apiError.response?.data?.message 
+        || apiError.response?.data?.issues?.[0]?.message
+        || apiError.message 
+        || "Failed to save receipt. Please try again.";
+      toast.error(errorMessage);
+      setScanResult(null); // Reset so user can try again
+      setScannedBillData(null);
+      setCustomerPaymentIntent(null);
+    }
   };
 
   const { isDark } = useTheme();
