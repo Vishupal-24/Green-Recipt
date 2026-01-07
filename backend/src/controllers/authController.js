@@ -3,7 +3,17 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import Merchant from "../models/Merchant.js";
-import { sendOtpEmail, sendWelcomeEmail, sendMerchantWelcomeEmail } from "../utils/sendEmail.js";
+import { sendWelcomeEmail, sendMerchantWelcomeEmail } from "../utils/sendEmail.js";
+import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+import {
+  generateOtp,
+  hashOtp,
+  verifyOtp as verifyOtpHash,
+  getOtpExpiry,
+  isOtpExpired,
+  canResendOtp,
+  OTP_CONFIG,
+} from "../utils/otp.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || JWT_SECRET + "_refresh";
@@ -33,86 +43,375 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not set. Define it in your environment before starting the server.");
 }
 
-export const forgotPassword = async (req, res) => {
+// ==========================================
+// FLOW 1: EMAIL VERIFICATION BEFORE SIGNUP
+// ==========================================
+
+/**
+ * STEP 1: Send OTP for Signup
+ * POST /api/auth/send-signup-otp
+ * 
+ * This creates a "pending" record with just email + OTP
+ * The actual user account is created only after OTP verification
+ */
+export const sendSignupOtp = async (req, res) => {
   try {
-    // Disabled until email delivery is re-enabled
-    return res.status(501).json({
-      message: "Password reset via email is temporarily unavailable. Please contact support.",
-    });
+    const { email, role = "customer" } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const { email, role } = req.body;
+    // Check if email already exists (across both collections)
+    const [customerExists, merchantExists] = await Promise.all([
+      User.findOne({ email: normalizedEmail }),
+      Merchant.findOne({ email: normalizedEmail }),
+    ]);
 
-    // Helper to find the right collection
-    const account = await findAccountByRole(email, role);
-
-    if (!account) {
-      // Generic response for security (avoid user enumeration)
-      return res.status(404).json({ message: "Account not found" });
+    if (customerExists || merchantExists) {
+      // Generic response to prevent user enumeration
+      // But we'll hint if they should use the other role's login
+      return res.status(400).json({ 
+        message: "This email is already registered. Please login instead.",
+        code: "EMAIL_EXISTS" 
+      });
     }
 
-    // Resend cooldown
-    if (account.otpLastSentAt && Date.now() - account.otpLastSentAt.getTime() < OTP_RESEND_WINDOW_MS) {
-      const waitSeconds = Math.ceil((OTP_RESEND_WINDOW_MS - (Date.now() - account.otpLastSentAt.getTime())) / 1000);
-      return res.status(429).json({ message: `Please wait ${waitSeconds}s before requesting another code.` });
+    // Check for existing pending signup (stored in the model with isEmailVerified: false)
+    const Model = role === "merchant" ? Merchant : User;
+    let pendingAccount = await Model.findOne({ 
+      email: normalizedEmail, 
+      isEmailVerified: false,
+      isVerified: false 
+    }).select("+emailOtp +emailOtpExpires +otpLastSentAt");
+
+    // Check cooldown
+    if (pendingAccount) {
+      const { canSend, waitSeconds } = canResendOtp(pendingAccount.otpLastSentAt);
+      if (!canSend) {
+        return res.status(429).json({ 
+          message: `Please wait ${waitSeconds} seconds before requesting another code.`,
+          code: "COOLDOWN",
+          waitSeconds 
+        });
+      }
     }
 
     // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpHash = await bcrypt.hash(otp, 10);
+    const otp = generateOtp();
+    const otpHash = hashOtp(otp);
+    const otpExpires = getOtpExpiry();
 
-    // Store hashed OTP
-    account.otpCodeHash = otpHash;
-    account.otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    account.otpLastSentAt = new Date();
-    await account.save();
+    if (pendingAccount) {
+      // Update existing pending account
+      pendingAccount.emailOtp = otpHash;
+      pendingAccount.emailOtpExpires = otpExpires;
+      pendingAccount.otpLastSentAt = new Date();
+      await pendingAccount.save();
+    } else {
+      // Create a temporary pending record
+      // We'll store minimal info; the rest is added during verification
+      if (role === "merchant") {
+        pendingAccount = new Merchant({
+          email: normalizedEmail,
+          password: "PENDING_" + crypto.randomBytes(16).toString("hex"), // Temporary, will be replaced
+          shopName: "Pending Verification", // Temporary
+          isVerified: false,
+          isEmailVerified: false,
+          emailOtp: otpHash,
+          emailOtpExpires: otpExpires,
+          otpLastSentAt: new Date(),
+        });
+      } else {
+        pendingAccount = new User({
+          email: normalizedEmail,
+          password: "PENDING_" + crypto.randomBytes(16).toString("hex"), // Temporary
+          name: "Pending Verification", // Temporary
+          isVerified: false,
+          isEmailVerified: false,
+          emailOtp: otpHash,
+          emailOtpExpires: otpExpires,
+          otpLastSentAt: new Date(),
+        });
+      }
+      await pendingAccount.save();
+    }
 
-    // Email disabled for now
-    // await sendOtpEmail(email, otp);
+    // Send OTP email (don't await to speed up response)
+    sendOtpEmail({ email: normalizedEmail, otp, purpose: "verify" }).catch((err) => {
+      console.error("[Auth] Failed to send signup OTP email:", err.message);
+    });
 
-    res.json({ message: "Password reset via OTP is disabled. Please contact support." });
+    // Log OTP in development only
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[DEV] Signup OTP for ${normalizedEmail}: ${otp}`);
+    }
 
+    res.json({ 
+      message: "Verification code sent to your email. Please check your inbox.",
+      email: normalizedEmail,
+      expiresIn: OTP_CONFIG.EXPIRY_MINUTES * 60, // seconds
+    });
   } catch (error) {
-    console.error("Forgot Password Error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("sendSignupOtp error:", error);
+    res.status(500).json({ message: "Failed to send verification code" });
   }
 };
 
-// 2. RESET PASSWORD (Verifies OTP + Sets New Password)
-export const resetPassword = async (req, res) => {
+/**
+ * STEP 2: Verify OTP and Complete Signup
+ * POST /api/auth/verify-signup-otp
+ */
+export const verifySignupOtp = async (req, res) => {
   try {
-    // Disabled until email delivery is re-enabled
-    return res.status(501).json({
-      message: "Password reset via email is temporarily unavailable. Please contact support.",
-    });
+    const { email, otp, password, role = "customer", name, shopName } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
 
-    const { email, role, otp, newPassword } = req.body;
+    const Model = role === "merchant" ? Merchant : User;
 
-    const account = await findAccountByRole(email, role);
-    if (!account) return res.status(404).json({ message: "Account not found" });
+    // Find pending account
+    const pendingAccount = await Model.findOne({
+      email: normalizedEmail,
+      isEmailVerified: false,
+      isVerified: false,
+    }).select("+emailOtp +emailOtpExpires");
 
-    // Verify OTP
-    if (!account.otpCodeHash || !account.otpExpiresAt || account.otpExpiresAt < Date.now()) {
-      return res.status(400).json({ message: "Invalid or expired code" });
+    if (!pendingAccount) {
+      return res.status(400).json({ 
+        message: "No pending verification found. Please request a new code.",
+        code: "NO_PENDING_VERIFICATION"
+      });
     }
 
-    const isMatch = await bcrypt.compare(otp, account.otpCodeHash);
+    // Check if OTP expired
+    if (isOtpExpired(pendingAccount.emailOtpExpires)) {
+      return res.status(400).json({ 
+        message: "Verification code has expired. Please request a new one.",
+        code: "OTP_EXPIRED"
+      });
+    }
+
+    // Check if OTP exists
+    if (!pendingAccount.emailOtp) {
+      return res.status(400).json({ 
+        message: "Invalid verification code.",
+        code: "INVALID_OTP"
+      });
+    }
+
+    // Verify OTP hash
+    let isMatch = false;
+    try {
+      isMatch = verifyOtpHash(otp, pendingAccount.emailOtp);
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      return res.status(400).json({ 
+        message: "Invalid verification code.",
+        code: "INVALID_OTP"
+      });
+    }
+
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid code" });
+      return res.status(400).json({ 
+        message: "Invalid verification code.",
+        code: "INVALID_OTP"
+      });
     }
 
-    account.password = newPassword;
+    // OTP is valid - complete the signup
+    if (role === "merchant") {
+      pendingAccount.shopName = shopName;
+    } else {
+      pendingAccount.name = name;
+    }
+    pendingAccount.password = password; // Will be hashed by pre-save hook
+    pendingAccount.isEmailVerified = true;
+    pendingAccount.isVerified = true;
     
-    // Clear OTP to prevent reuse
-    account.otpCodeHash = undefined;
-    account.otpExpiresAt = undefined;
-    
+    // Clear OTP fields (single-use)
+    pendingAccount.emailOtp = undefined;
+    pendingAccount.emailOtpExpires = undefined;
+    pendingAccount.otpLastSentAt = undefined;
+
+    await pendingAccount.save();
+
+    // Send welcome email (async)
+    if (role === "merchant") {
+      sendMerchantWelcomeEmail(normalizedEmail, shopName).catch((err) => {
+        console.error("[Auth] Welcome email failed:", err.message);
+      });
+    } else {
+      sendWelcomeEmail(normalizedEmail, name).catch((err) => {
+        console.error("[Auth] Welcome email failed:", err.message);
+      });
+    }
+
+    res.status(201).json({
+      message: "Email verified successfully! Your account has been created.",
+      email: normalizedEmail,
+      role,
+      redirect: role === "merchant" ? "/merchant-login" : "/customer-login",
+    });
+  } catch (error) {
+    console.error("verifySignupOtp error:", error);
+    res.status(500).json({ message: "Failed to verify code" });
+  }
+};
+
+// ==========================================
+// FLOW 2: FORGOT PASSWORD
+// ==========================================
+
+/**
+ * STEP 3: Request Password Reset OTP
+ * POST /api/auth/forgot-password
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email, role = "customer" } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Find account in the appropriate collection
+    const Model = role === "merchant" ? Merchant : User;
+    const account = await Model.findOne({ email: normalizedEmail })
+      .select("+resetPasswordOtp +resetPasswordExpires +otpLastSentAt");
+
+    // Always return success to prevent user enumeration
+    // But only send email if account exists
+    if (!account) {
+      // Add small delay to prevent timing attacks
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return res.json({ 
+        message: "If an account exists with this email, a reset code has been sent.",
+      });
+    }
+
+    // Check cooldown
+    const { canSend, waitSeconds } = canResendOtp(account.otpLastSentAt);
+    if (!canSend) {
+      return res.status(429).json({ 
+        message: `Please wait ${waitSeconds} seconds before requesting another code.`,
+        code: "COOLDOWN",
+        waitSeconds 
+      });
+    }
+
+    // Generate OTP
+    const otp = generateOtp();
+    const otpHash = hashOtp(otp);
+    const otpExpires = getOtpExpiry();
+
+    // Store hashed OTP
+    account.resetPasswordOtp = otpHash;
+    account.resetPasswordExpires = otpExpires;
+    account.otpLastSentAt = new Date();
     await account.save();
 
-    res.json({ message: "Password reset successful" });
+    // Send OTP email
+    const accountName = role === "merchant" ? account.shopName : account.name;
+    sendOtpEmail({ 
+      email: normalizedEmail, 
+      otp, 
+      purpose: "reset",
+      name: accountName 
+    }).catch((err) => {
+      console.error("[Auth] Failed to send reset OTP email:", err.message);
+    });
 
+    // Log OTP in development only
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[DEV] Reset OTP for ${normalizedEmail}: ${otp}`);
+    }
+
+    res.json({ 
+      message: "If an account exists with this email, a reset code has been sent.",
+      expiresIn: OTP_CONFIG.EXPIRY_MINUTES * 60, // seconds
+    });
   } catch (error) {
-    console.error("Reset Password Error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("forgotPassword error:", error);
+    res.status(500).json({ message: "Failed to process request" });
+  }
+};
+
+/**
+ * STEP 4: Reset Password Using OTP
+ * POST /api/auth/reset-password
+ */
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, role = "customer", otp, newPassword } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const Model = role === "merchant" ? Merchant : User;
+    const account = await Model.findOne({ email: normalizedEmail })
+      .select("+resetPasswordOtp +resetPasswordExpires +tokenVersion");
+
+    if (!account) {
+      return res.status(400).json({ 
+        message: "Invalid or expired reset code.",
+        code: "INVALID_REQUEST"
+      });
+    }
+
+    // Check if OTP exists
+    if (!account.resetPasswordOtp) {
+      return res.status(400).json({ 
+        message: "No reset code found. Please request a new one.",
+        code: "NO_OTP"
+      });
+    }
+
+    // Check if OTP expired
+    if (isOtpExpired(account.resetPasswordExpires)) {
+      // Clear expired OTP
+      account.resetPasswordOtp = undefined;
+      account.resetPasswordExpires = undefined;
+      await account.save();
+      
+      return res.status(400).json({ 
+        message: "Reset code has expired. Please request a new one.",
+        code: "OTP_EXPIRED"
+      });
+    }
+
+    // Verify OTP hash
+    let isMatch = false;
+    try {
+      isMatch = verifyOtpHash(otp, account.resetPasswordOtp);
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      return res.status(400).json({ 
+        message: "Invalid reset code.",
+        code: "INVALID_OTP"
+      });
+    }
+
+    if (!isMatch) {
+      return res.status(400).json({ 
+        message: "Invalid reset code.",
+        code: "INVALID_OTP"
+      });
+    }
+
+    // OTP is valid - update password
+    account.password = newPassword; // Will be hashed by pre-save hook
+    
+    // Clear OTP fields (single-use)
+    account.resetPasswordOtp = undefined;
+    account.resetPasswordExpires = undefined;
+    account.otpLastSentAt = undefined;
+    
+    // Invalidate all existing sessions (security best practice)
+    account.tokenVersion = (account.tokenVersion || 0) + 1;
+    account.refreshToken = undefined;
+    account.refreshTokenExpiry = undefined;
+
+    await account.save();
+
+    res.json({ 
+      message: "Password reset successful. Please login with your new password.",
+      redirect: role === "merchant" ? "/merchant-login" : "/customer-login",
+    });
+  } catch (error) {
+    console.error("resetPassword error:", error);
+    res.status(500).json({ message: "Failed to reset password" });
   }
 };
 

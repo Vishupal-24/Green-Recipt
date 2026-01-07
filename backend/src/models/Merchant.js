@@ -68,6 +68,28 @@ const merchantSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
+		// Email verification OTP (for signup)
+		isEmailVerified: {
+			type: Boolean,
+			default: false,
+		},
+		emailOtp: {
+			type: String,
+			select: false,
+		},
+		emailOtpExpires: {
+			type: Date,
+			select: false,
+		},
+		// Password reset OTP
+		resetPasswordOtp: {
+			type: String,
+			select: false,
+		},
+		resetPasswordExpires: {
+			type: Date,
+			select: false,
+		},
 
 		// Onboarding
 		isProfileComplete: {

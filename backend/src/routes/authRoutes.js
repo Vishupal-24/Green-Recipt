@@ -9,6 +9,8 @@ import {
 	verifyOtp,
 	forgotPassword,
   	resetPassword,
+	sendSignupOtp,
+	verifySignupOtp,
 	getProfile,
 	updateProfile,
 	changePassword,
@@ -28,6 +30,8 @@ import {
 	otpVerifySchema,
 	forgotPasswordSchema,
 	resetPasswordSchema,
+	sendSignupOtpSchema,
+	verifySignupOtpSchema,
 	updateProfileSchema,
 	changePasswordSchema,
 } from "../validators/authSchemas.js";
@@ -58,13 +62,29 @@ const refreshLimiter = rateLimit({
 
 router.use(authLimiter);
 
-// Public auth routes
+// ========================================
+// NEW: OTP-based Email Verification Flow
+// ========================================
+// Step 1: Send OTP to email before signup
+router.post("/send-signup-otp", otpLimiter, validate(sendSignupOtpSchema), sendSignupOtp);
+// Step 2: Verify OTP and complete signup
+router.post("/verify-signup-otp", otpLimiter, validate(verifySignupOtpSchema), verifySignupOtp);
+
+// Legacy direct signup routes (auto-verified, no OTP)
 router.post("/signup/customer", validate(customerSignupSchema), registerCustomer);
 router.post("/signup/merchant", validate(merchantSignupSchema), registerMerchant);
+
+// Login
 router.post("/login", validate(loginSchema), login);
+
+// Legacy OTP routes (kept for backward compatibility)
 router.post("/otp/request", otpLimiter, validate(otpRequestSchema), requestOtp);
 router.post("/otp/verify", otpLimiter, validate(otpVerifySchema), verifyOtp);
 router.get("/verify/:token", verifyEmail);
+
+// ========================================
+// Password Reset Flow (OTP-based)
+// ========================================
 router.post('/forgot-password', otpLimiter, validate(forgotPasswordSchema), forgotPassword);
 router.post('/reset-password', otpLimiter, validate(resetPasswordSchema), resetPassword);
 

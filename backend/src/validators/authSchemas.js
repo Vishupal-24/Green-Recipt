@@ -67,6 +67,38 @@ export const resetPasswordSchema = {
 	}),
 };
 
+// NEW: Send OTP for signup (email verification before account creation)
+export const sendSignupOtpSchema = {
+	body: z.object({
+		email: emailSchema,
+		role: roleSchema.default("customer"),
+	}),
+};
+
+// NEW: Verify OTP and complete signup
+export const verifySignupOtpSchema = {
+	body: z.object({
+		email: emailSchema,
+		otp: z.string().trim().length(6, "OTP must be 6 digits"),
+		password: passwordSchema,
+		role: roleSchema.default("customer"),
+		// Customer-specific
+		name: z.string().min(1).optional(),
+		// Merchant-specific
+		shopName: z.string().min(1).optional(),
+	}).refine(
+		(data) => {
+			if (data.role === "customer") return !!data.name;
+			if (data.role === "merchant") return !!data.shopName;
+			return true;
+		},
+		{
+			message: "Name is required for customers, shopName is required for merchants",
+			path: ["name"],
+		}
+	),
+};
+
 export const changePasswordSchema = {
 	body: z.object({
 		currentPassword: z.string().min(1, "Current password is required"),
