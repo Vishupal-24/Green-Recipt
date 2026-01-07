@@ -3,6 +3,7 @@ import Merchant from "../models/Merchant.js";
 import User from "../models/User.js";
 import { getNowIST, normalizeToIST, formatISTDate, formatISTTime, toIST } from "../utils/timezone.js";
 import { clearAnalyticsCache } from "./analyticsController.js";
+import { sendReceiptEmail } from "../utils/sendEmail.js";
 
 const normalizeItems = (items = []) =>
   items.map((item) => ({
@@ -292,8 +293,21 @@ export const claimReceipt = async (req, res) => {
       { new: true }
     );
     
-    // Force re-fetch or ensure we have fresh data for the client?
-    // findByIdAndUpdate returns the updated document, so it has both changes if they happened.
+    // Send receipt email to customer (async, don't await - don't block claim)
+    if (user?.email && receipt) {
+      const receiptForEmail = receipt.toObject();
+      sendReceiptEmail({
+        to: user.email,
+        customerName: user.name || "Customer",
+        merchantName: receiptForEmail.merchantSnapshot?.shopName || "Merchant",
+        total: receiptForEmail.total || 0,
+        date: formatISTDate(toIST(receiptForEmail.transactionDate || receiptForEmail.createdAt)),
+        items: receiptForEmail.items || [],
+        paymentMethod: receiptForEmail.paymentMethod || "N/A"
+      }).catch((err) => {
+        console.error("[Receipt] Email failed:", err.message);
+      });
+    }
 
     res.json(mapReceiptToClient(receipt.toObject()));
   } catch (error) {

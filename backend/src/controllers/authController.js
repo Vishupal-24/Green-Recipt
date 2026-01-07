@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
 import Merchant from "../models/Merchant.js";
-import { sendOtpEmail } from "../utils/sendEmail.js"; // Currently disabled
+import { sendOtpEmail, sendWelcomeEmail, sendMerchantWelcomeEmail } from "../utils/sendEmail.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || JWT_SECRET + "_refresh";
@@ -215,6 +215,11 @@ export const registerCustomer = async (req, res) => {
     // Skip OTP - auto-verify
     await user.save();
 
+    // Send welcome email (async, don't await - don't block signup)
+    sendWelcomeEmail(email, name).catch((err) => {
+      console.error("[Auth] Welcome email failed:", err.message);
+    });
+
     res.status(201).json({
       message: "Registration successful. Your account is verified. Please login.",
       email: user.email,
@@ -255,6 +260,11 @@ export const registerMerchant = async (req, res) => {
     const merchant = new Merchant({ shopName, email, password, isVerified: true });
     // Skip OTP - auto-verify
     await merchant.save();
+
+    // Send welcome email (async, don't await - don't block signup)
+    sendMerchantWelcomeEmail(email, shopName).catch((err) => {
+      console.error("[Auth] Merchant welcome email failed:", err.message);
+    });
 
     res.status(201).json({
       message: "Registration successful. Your account is verified. Please login.",
