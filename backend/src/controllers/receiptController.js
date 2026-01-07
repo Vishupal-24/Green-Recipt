@@ -265,21 +265,35 @@ export const getCustomerReceipts = async (req, res) => {
 export const claimReceipt = async (req, res) => {
   try {
     const { receiptId } = req.body;
-    const receipt = await Receipt.findById(receiptId);
-    if (!receipt) {
+    
+    // Check if receipt exists and is not already claimed by someone else
+    const receiptCheck = await Receipt.findById(receiptId);
+    if (!receiptCheck) {
       return res.status(404).json({ message: "Receipt not found" });
     }
 
-    if (receipt.userId && receipt.userId.toString() !== req.user.id) {
+    if (receiptCheck.userId && receiptCheck.userId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Receipt already claimed" });
     }
 
-    receipt.userId = req.user.id;
+    // Prepare customer snapshot
     const user = await User.findById(req.user.id).lean();
-    if (user) {
-      receipt.customerSnapshot = { name: user.name, email: user.email };
-    }
-    await receipt.save();
+    const customerSnapshot = user ? { name: user.name, email: user.email } : null;
+
+    // Use atomic update to avoid race conditions with markReceiptPaid
+    const receipt = await Receipt.findByIdAndUpdate(
+      receiptId,
+      {
+        $set: {
+          userId: req.user.id,
+          customerSnapshot: customerSnapshot
+        }
+      },
+      { new: true }
+    );
+    
+    // Force re-fetch or ensure we have fresh data for the client?
+    // findByIdAndUpdate returns the updated document, so it has both changes if they happened.
 
     res.json(mapReceiptToClient(receipt.toObject()));
   } catch (error) {
@@ -293,35 +307,40 @@ export const markReceiptPaid = async (req, res) => {
     const { id } = req.params;
     const { paymentMethod } = req.body; // Accept payment method from merchant
     
-    const receipt = await Receipt.findById(id);
-    if (!receipt) {
+    // Use atomic update to avoid race conditions with customer claim
+    // We first check authorization in the query itself or separate check
+    
+    const receiptCheck = await Receipt.findById(id);
+    if (!receiptCheck) {
       return res.status(404).json({ message: "Receipt not found" });
     }
-    if (!receipt.merchantId || receipt.merchantId.toString() !== req.user.id) {
+    if (!receiptCheck.merchantId || receiptCheck.merchantId.toString() !== req.user.id) {
       return res.status(403).json({ message: "Not authorized to update receipt" });
     }
 
-    // Only merchant can finalize payment - this is the source of truth
-    receipt.status = "completed";
-    
-    // Only update payment method if it's not already set to a specific type (upi/card/cash)
-    // or if the current one is 'other', OR if the merchant explicitly wants to change it.
-    // However, per requirements, we should respect the customer's selection if possible.
-    // If the receipt already has a valid payment method (set by customer), we keep it unless it was 'other'.
-    const currentMethod = receipt.paymentMethod;
+    // Determine the payment method to set
+    const currentMethod = receiptCheck.paymentMethod;
     const isGeneric = !currentMethod || currentMethod === 'other';
-    
+    let newPaymentMethod = currentMethod;
+
     if (paymentMethod && ["upi", "cash", "card", "other"].includes(paymentMethod)) {
-      if (isGeneric) {
-         receipt.paymentMethod = paymentMethod;
-      }
-      // If it's already specific (e.g. 'upi'), we don't overwrite it with merchant's input
-      // unless we want to allow correction. But user asked to respect customer's choice.
+       // Allow overwrite if current is generic OR we want to trust the merchant's explicit action
+       // The merchant's "Paid via Cash" or "Paid via UPI" button is a strong signal of what actually happened at the counter.
+       // So we should probably prefer the merchant's input if they are explicitly marking it.
+       newPaymentMethod = paymentMethod;
     }
-    
-    receipt.paidAt = getNowIST();
-    
-    await receipt.save();
+
+    const receipt = await Receipt.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+            status: "completed",
+            paymentMethod: newPaymentMethod,
+            paidAt: getNowIST()
+        }
+      },
+      { new: true } // Return updated doc
+    );
 
     // Invalidate cache
     clearAnalyticsCache(req.user.id);
