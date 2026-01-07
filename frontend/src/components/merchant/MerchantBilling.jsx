@@ -1865,33 +1865,51 @@ const MerchantBilling = ({ inventory, profile }) => {
 
   const removeFromCart = (itemId) => setCart(prev => prev.filter(item => item.id !== itemId));
 
-  // 🚀 GENERATE QR (no server write until payment is confirmed)
-  const handleGenerateQR = () => {
+  // 🚀 GENERATE QR (persist first so QR carries a valid ObjectId)
+  const handleGenerateQR = async () => {
     if (cart.length === 0) return;
 
-    const baseBill = {
-      merchant: merchantProfile.shopName,
-      mid: merchantProfile.merchantId,
-      date: getTodayIST(), 
-      time: formatISTDisplay(getNowIST(), { hour: '2-digit', minute: '2-digit', hour12: true }),
-      total: cartTotal,
-      items: cart.map(item => ({
-        n: item.name, 
-        q: item.quantity,
-        p: item.price
-      })),
-      footer: merchantProfile.receiptFooter || "Thank you!"
-    };
+    try {
 
-    // Use a local temp id for the QR; we persist only after payment
-    const tempId = `GR-${Date.now().toString().slice(-6)}`;
-    const billData = { ...baseBill, id: tempId, rid: tempId };
-    setGeneratedBill(billData);
+      const baseBill = {
+        merchant: merchantProfile.shopName,
+        mid: merchantProfile.merchantId,
+        date: getTodayIST(), 
+        time: formatISTDisplay(getNowIST(), { hour: '2-digit', minute: '2-digit', hour12: true }),
+        total: cartTotal,
+        items: cart.map(item => ({
+          n: item.name, 
+          q: item.quantity,
+          p: item.price
+        })),
+        footer: merchantProfile.receiptFooter || "Thank you!"
+      };
 
-    const jsonString = JSON.stringify(billData);
-    const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(jsonString)}`;
-    setQrDataUrl(apiUrl);
-    setShowQr(true);
+      // 🚀 Create the pending receipt *before* showing the QR so the QR carries a real ObjectId
+      const payload = {
+        items: cart.map(item => ({ name: item.name, unitPrice: item.price, quantity: item.quantity })),
+        source: 'qr',
+        paymentMethod: 'other', // Actual method is confirmed later
+        transactionDate: getNowIST().toISOString(),
+        total: cartTotal,
+        footer: merchantProfile.receiptFooter,
+        status: 'pending',
+      };
+
+      const { data: created } = await createReceipt(payload);
+      const persistedId = created.id || created._id;
+
+      const billData = { ...baseBill, id: persistedId, rid: persistedId };
+      setGeneratedBill(billData);
+
+      const jsonString = JSON.stringify(billData);
+      const apiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(jsonString)}`;
+      setQrDataUrl(apiUrl);
+      setShowQr(true);
+    } catch (err) {
+      console.error("QR generation failed", err);
+      toast.error("Could not generate QR. Please try again.");
+    }
   };
 
   const handleCloseQr = () => {
@@ -1900,24 +1918,13 @@ const MerchantBilling = ({ inventory, profile }) => {
     setQrDataUrl("");
   };
 
-  // 💾 SAVE THE SALE (persist + mark paid only after payment confirmation)
+  // 💾 SAVE THE SALE (mark existing pending receipt as paid)
   const handlePaymentReceived = async (method) => {
     if (!generatedBill) return;
 
     try {
-      const payload = {
-        items: cart.map(item => ({ name: item.name, unitPrice: item.price, quantity: item.quantity })),
-        source: 'qr',
-        paymentMethod: method,
-        transactionDate: getNowIST().toISOString(),
-        total: cartTotal,
-        footer: merchantProfile.receiptFooter,
-        status: 'pending',
-      };
-
-      // Create receipt only now (prevents orphan receipts when modal is closed)
-      const { data: created } = await createReceipt(payload);
-      const persistedId = created.id || created._id;
+      const persistedId = generatedBill.rid || generatedBill.id;
+      if (!persistedId) throw new Error("Missing receipt id");
 
       // Mark as paid to capture paidAt timestamp and final status
       const { data: updated } = await markReceiptPaid(persistedId, method);
@@ -1928,23 +1935,10 @@ const MerchantBilling = ({ inventory, profile }) => {
 
       window.dispatchEvent(new Event('customer-receipts-updated'));
       window.dispatchEvent(new Event('merchantStorage'));
+      window.dispatchEvent(new Event('merchant-receipts-updated'));
     } catch (err) {
       console.error(err);
-      const currentSales = JSON.parse(localStorage.getItem('merchantSales')) || [];
-
-      const fallbackId = generatedBill.rid || generatedBill.id || `GR-${Date.now().toString().slice(-6)}`;
-      const newSale = {
-        ...generatedBill,
-        id: fallbackId,
-        rid: fallbackId,
-        total: cartTotal,
-        status: 'completed',
-        paymentMethod: method,
-      };
-
-      const merged = [newSale, ...currentSales.filter(r => r.id !== fallbackId && r._id !== fallbackId)];
-      localStorage.setItem('merchantSales', JSON.stringify(merged));
-      window.dispatchEvent(new Event('merchantStorage'));
+      toast.error("Could not mark paid. Please try again.");
     }
 
     setShowQr(false);

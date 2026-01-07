@@ -418,38 +418,35 @@ export const updateReceipt = async (req, res) => {
     const { id } = req.params;
     const { paymentMethod, status, note, excludeFromStats, category } = req.body;
 
-    const receipt = await Receipt.findById(id);
-    if (!receipt) {
+    // Check strict ownership first
+    const receiptCheck = await Receipt.findById(id);
+    if (!receiptCheck) {
       return res.status(404).json({ message: "Receipt not found" });
     }
 
-    // Check ownership - customers can update their receipts, merchants can update their receipts
     const isOwner =
-      (req.user.role === "customer" && receipt.userId?.toString() === req.user.id) ||
-      (req.user.role === "merchant" && receipt.merchantId?.toString() === req.user.id);
+      (req.user.role === "customer" && receiptCheck.userId?.toString() === req.user.id) ||
+      (req.user.role === "merchant" && receiptCheck.merchantId?.toString() === req.user.id);
 
     if (!isOwner) {
       return res.status(403).json({ message: "Not authorized to update this receipt" });
     }
 
-    // Update allowed fields
-    if (paymentMethod !== undefined) {
-      receipt.paymentMethod = paymentMethod;
-    }
-    if (status !== undefined) {
-      receipt.status = status;
-    }
-    if (note !== undefined) {
-      receipt.note = note;
-    }
-    if (excludeFromStats !== undefined) {
-      receipt.excludeFromStats = Boolean(excludeFromStats);
-    }
-    if (category !== undefined) {
-      receipt.category = category;
-    }
+    // Build update object dynamically
+    const updateFields = {};
+    if (paymentMethod !== undefined) updateFields.paymentMethod = paymentMethod;
+    if (status !== undefined) updateFields.status = status;
+    if (note !== undefined) updateFields.note = note;
+    if (excludeFromStats !== undefined) updateFields.excludeFromStats = Boolean(excludeFromStats);
+    if (category !== undefined) updateFields.category = category;
 
-    await receipt.save();
+    // Atomic update
+    const receipt = await Receipt.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true }
+    );
+
     res.json(mapReceiptToClient(receipt.toObject()));
   } catch (error) {
     console.error("updateReceipt error", error);

@@ -348,7 +348,7 @@
 
 // export default MerchantOverview;
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -379,27 +379,47 @@ const MerchantOverview = () => {
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Load from backend with local fallback
+  // Centralized loader with retry + fallback
+  const loadReceipts = useCallback(async () => {
+    try {
+      const { data } = await fetchMerchantReceipts();
+      const receiptsData = data.receipts || data || [];
+      setSales(receiptsData);
+      localStorage.setItem("merchantSales", JSON.stringify(receiptsData));
+    } catch (error) {
+      const saved = localStorage.getItem("merchantSales");
+      if (saved) {
+        try {
+          setSales(JSON.parse(saved));
+        } catch (e) {
+          // Ignore corrupt cache
+        }
+      }
+    }
+  }, []);
+
+  // Initial load + live refresh (visibility + custom events + interval)
   useEffect(() => {
     let mounted = true;
-    const load = async () => {
-      try {
-        const { data } = await fetchMerchantReceipts();
-        const receiptsData = data.receipts || data || [];
-        if (mounted) {
-          setSales(receiptsData);
-          localStorage.setItem("merchantSales", JSON.stringify(receiptsData));
-        }
-      } catch (error) {
-        const saved = localStorage.getItem("merchantSales");
-        if (mounted && saved) setSales(JSON.parse(saved));
-      }
+    const tick = async () => mounted && loadReceipts();
+    tick();
+
+    const handleVisibility = () => {
+      if (!document.hidden) tick();
     };
-    load();
+
+    window.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("merchant-receipts-updated", tick);
+
+    const intervalId = setInterval(tick, 30000); // 30s soft refresh for production readiness
+
     return () => {
       mounted = false;
+      window.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("merchant-receipts-updated", tick);
+      clearInterval(intervalId);
     };
-  }, []);
+  }, [loadReceipts]);
 
   const handleDeleteReceipt = async () => {
     if (!viewingReceipt) return;
