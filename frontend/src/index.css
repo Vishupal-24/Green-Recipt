@@ -228,6 +228,7 @@ html {
 /* Ambient background effect for dark mode - More subtle */
 .dark-ambient {
   position: relative;
+  overflow: hidden;
 }
 
 .dark-ambient::before {
