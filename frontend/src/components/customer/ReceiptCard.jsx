@@ -357,6 +357,7 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
   const { isDark: themeIsDark } = useTheme();
   const isDark = propIsDark !== undefined ? propIsDark : themeIsDark;
   const [isOpen, setIsOpen] = useState(false);
+  const [isImageOpen, setIsImageOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [customerIntent, setCustomerIntent] = useState(null);
 
@@ -557,12 +558,11 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
               {!isQR && data.image && (
                  <div className="mb-4">
                   <h4 className={`text-xs font-bold uppercase mb-3 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}><Image size={14} /> Receipt Image</h4>
-                  <a
-                    href={data.image}
-                    target="_blank"
-                    rel="noreferrer"
-                    className={`block aspect-[4/3] rounded-xl overflow-hidden border ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-slate-100 border-slate-200'}`}
-                    title="Open full image"
+                  <button
+                    type="button"
+                    onClick={() => setIsImageOpen(true)}
+                    className={`block w-full aspect-[4/3] rounded-xl overflow-hidden border ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-slate-100 border-slate-200'}`}
+                    title="View full image"
                   >
                     <img
                       src={data.image}
@@ -570,7 +570,7 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
                       className="w-full h-full object-contain cursor-zoom-in"
                       loading="lazy"
                     />
-                  </a>
+                  </button>
                 </div>
               )}
 
@@ -602,6 +602,32 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
               )}
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fullscreen image viewer (in-app) */}
+      {isOpen && isImageOpen && !isQR && data.image && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 md:p-6"
+          onClick={() => setIsImageOpen(false)}
+        >
+          <div className="relative w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setIsImageOpen(false)}
+              className="absolute top-3 right-3 md:top-5 md:right-5 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              aria-label="Close image"
+              title="Close"
+            >
+              <X size={20} />
+            </button>
+            <img
+              src={data.image}
+              alt="Receipt full view"
+              className="max-w-full max-h-full object-contain"
+              draggable={false}
+            />
           </div>
         </div>
       )}
