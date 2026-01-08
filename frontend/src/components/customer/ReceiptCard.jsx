@@ -360,11 +360,20 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [customerIntent, setCustomerIntent] = useState(null);
+  const [isMerchantLogoBroken, setIsMerchantLogoBroken] = useState(false);
 
   const isQR = data.type === 'qr';
   const isPaid = data.status === 'completed';
   const branding = data.merchantSnapshot || {};
   const brandColor = branding.brandColor || '#10b981';
+  const merchantLogoUrl = branding.logoUrl || branding.logoURL || branding.logo || null;
+  const merchantInitials = (data.merchant || '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => (w[0] || '').toUpperCase())
+    .join('') || 'MR';
 
   const handlePaymentIntent = (method) => {
     setCustomerIntent(method);
@@ -406,13 +415,25 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
         `}
       >
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${
-            isQR 
-              ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-600'
-              : isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600'
-          }`}>
-            {isQR ? <QrCode size={18} className="md:w-5 md:h-5" /> : <Image size={18} className="md:w-5 md:h-5" />}
-          </div>
+          {merchantLogoUrl && !isMerchantLogoBroken ? (
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl overflow-hidden shrink-0 p-1 border ${isDark ? 'bg-white border-dark-border' : 'bg-white border-slate-200'}`}>
+              <img
+                src={merchantLogoUrl}
+                alt={`${data.merchant || 'Merchant'} logo`}
+                className="w-full h-full object-contain"
+                loading="lazy"
+                onError={() => setIsMerchantLogoBroken(true)}
+              />
+            </div>
+          ) : (
+            <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${
+              isQR 
+                ? isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-600'
+                : isDark ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-600'
+            }`}>
+              <span className="text-xs md:text-sm font-black leading-none select-none">{merchantInitials}</span>
+            </div>
+          )}
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -461,13 +482,18 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
               <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, white 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
               
               <div className="flex items-center gap-3 relative z-10 overflow-hidden">
-                 {branding.logoUrl ? (
-                  <div className="w-10 h-10 bg-white rounded-xl p-1 shadow-lg shrink-0">
-                    <img src={branding.logoUrl} alt="Logo" className="w-full h-full object-contain" onError={(e) => e.target.style.display = 'none'} />
+                {merchantLogoUrl && !isMerchantLogoBroken ? (
+                  <div className="w-10 h-10 bg-white rounded-xl p-1 shadow-lg shrink-0 overflow-hidden">
+                    <img
+                      src={merchantLogoUrl}
+                      alt="Logo"
+                      className="w-full h-full object-contain"
+                      onError={() => setIsMerchantLogoBroken(true)}
+                    />
                   </div>
                 ) : (
-                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm shrink-0">
-                    {isQR ? <QrCode size={18} /> : <Image size={18} />}
+                  <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm shrink-0 flex items-center justify-center">
+                    <span className="text-sm font-black leading-none select-none">{merchantInitials}</span>
                   </div>
                 )}
                 <div className="min-w-0">
