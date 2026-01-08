@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import Receipt from "../models/Receipt.js";
-import { getISTDateRanges, getNowIST, toIST, formatISTDateTime } from "../utils/timezone.js";
+import {
+  getISTDateRanges,
+  getNowIST,
+  formatISTDateTime,
+  getISTCalendarParts,
+  getDaysInISTMonth,
+  getStartOfISTMonthMonthsAgo,
+} from "../utils/timezone.js";
 
 const IST_TIMEZONE = "Asia/Kolkata";
 
@@ -182,7 +189,7 @@ export const getCustomerAnalytics = async (req, res) => {
         { 
           $match: { 
             ...baseMatch, 
-            transactionDate: { $gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } 
+            transactionDate: { $gte: getStartOfISTMonthMonthsAgo(5, now) } 
           } 
         },
         {
@@ -227,8 +234,10 @@ export const getCustomerAnalytics = async (req, res) => {
     const lastMonthTotal = lastMonth[0]?.total || 0;
     const thisWeekTotal = thisWeek[0]?.total || 0;
     const lastWeekTotal = lastWeek[0]?.total || 0;
-    const daysInMonth = now.getDate();
-    const avgPerDay = daysInMonth > 0 ? Math.round(thisMonthTotal / daysInMonth) : 0;
+    const nowParts = getISTCalendarParts(now);
+    const dayOfMonth = nowParts?.day || 1;
+    const daysInMonth = getDaysInISTMonth(now);
+    const avgPerDay = dayOfMonth > 0 ? Math.round(thisMonthTotal / dayOfMonth) : 0;
     
     // Period comparisons
     const monthOverMonthChange = lastMonthTotal > 0 
@@ -239,7 +248,7 @@ export const getCustomerAnalytics = async (req, res) => {
       : 0;
 
     // Month-end projection
-    const projectedMonthEnd = avgPerDay * new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const projectedMonthEnd = avgPerDay * daysInMonth;
 
     return {
       // Summary stats
@@ -536,7 +545,7 @@ export const getMerchantAnalytics = async (req, res) => {
         { 
           $match: { 
             ...baseMatch, 
-            transactionDate: { $gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) } 
+            transactionDate: { $gte: getStartOfISTMonthMonthsAgo(5, now) } 
           } 
         },
         {
@@ -558,8 +567,9 @@ export const getMerchantAnalytics = async (req, res) => {
     const lastMonthTotal = lastMonth[0]?.total || 0;
     const thisWeekTotal = thisWeek[0]?.total || 0;
     const lastWeekTotal = lastWeek[0]?.total || 0;
-    const daysInMonth = now.getDate();
-    const avgPerDay = daysInMonth > 0 ? Math.round(thisMonthTotal / daysInMonth) : 0;
+    const nowParts = getISTCalendarParts(now);
+    const dayOfMonth = nowParts?.day || 1;
+    const avgPerDay = dayOfMonth > 0 ? Math.round(thisMonthTotal / dayOfMonth) : 0;
     const totalReceiptsThisMonth = thisMonth[0]?.count || 0;
 
     const monthOverMonthChange = lastMonthTotal > 0 

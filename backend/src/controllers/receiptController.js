@@ -42,6 +42,7 @@ const mapReceiptToClient = (receipt) => {
     customerName: receipt.customerSnapshot?.name || null,
     customerEmail: receipt.customerSnapshot?.email || null,
     amount: receipt.total,
+    transactionDate: receipt.transactionDate ? new Date(receipt.transactionDate).toISOString() : null,
     date: isoDate,
     time,
     type: receipt.source,

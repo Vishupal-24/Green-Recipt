@@ -46,6 +46,45 @@ const getISTParts = (date) => {
 };
 
 /**
+ * Get IST calendar parts for a given instant.
+ * @returns {{year:number, month:number, day:number} | null} where month is 0-indexed
+ */
+export const getISTCalendarParts = (date = new Date()) => {
+  const parts = getISTParts(date);
+  if (!parts) return null;
+  return { year: parts.year, month: parts.month - 1, day: parts.day };
+};
+
+/**
+ * Days in the IST month containing the given instant.
+ */
+export const getDaysInISTMonth = (date = new Date()) => {
+  const parts = getISTCalendarParts(date);
+  if (!parts) return new Date().getUTCDate();
+  return new Date(Date.UTC(parts.year, parts.month + 1, 0)).getUTCDate();
+};
+
+/**
+ * Start-of-month instant (IST midnight) for the IST month containing the given instant.
+ */
+export const getStartOfISTMonth = (date = new Date()) => {
+  const parts = getISTCalendarParts(date);
+  if (!parts) return new Date();
+  return new Date(Date.UTC(parts.year, parts.month, 1, 0, 0, 0, 0) - IST_OFFSET_MS);
+};
+
+/**
+ * Start-of-month instant (IST midnight) for N months ago relative to the given instant.
+ * monthsAgo=0 => start of current IST month.
+ */
+export const getStartOfISTMonthMonthsAgo = (monthsAgo, date = new Date()) => {
+  const parts = getISTCalendarParts(date);
+  if (!parts) return new Date();
+  const offset = Number(monthsAgo) || 0;
+  return new Date(Date.UTC(parts.year, parts.month - offset, 1, 0, 0, 0, 0) - IST_OFFSET_MS);
+};
+
+/**
  * Current time (instant). Naming kept for compatibility.
  */
 export const getNowIST = () => new Date();
@@ -213,6 +252,10 @@ export default {
   formatISTDate,
   formatISTTime,
   formatISTDateTime,
+  getISTCalendarParts,
+  getDaysInISTMonth,
+  getStartOfISTMonth,
+  getStartOfISTMonthMonthsAgo,
   getISTDateRanges,
   getTodayIST,
   getCurrentTimeIST,
