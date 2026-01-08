@@ -1,43 +1,62 @@
 /**
  * IST (Indian Standard Time) Timezone Utilities for Frontend
- * All timestamps in this application must be in IST (UTC+05:30)
- * 
- * This module provides utilities to:
- * - Get current IST time
- * - Convert any date to IST
- * - Format dates for display
- * - Create IST-aware date inputs
+ *
+ * Strategy (Option A): store timestamps as real instants (UTC) and format
+ * for display using the IST calendar/clock (Asia/Kolkata).
+ *
+ * IMPORTANT: Do not "shift" Date objects by adding offsets.
  */
 
 const IST_OFFSET_HOURS = 5;
 const IST_OFFSET_MINUTES = 30;
 const IST_OFFSET_MS = (IST_OFFSET_HOURS * 60 + IST_OFFSET_MINUTES) * 60 * 1000;
 
-/**
- * Get current date/time in IST
- * @returns {Date} Current IST time as a Date object
- */
-export const getNowIST = () => {
-  const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
-  return new Date(utc + IST_OFFSET_MS);
+const IST_TIME_ZONE = 'Asia/Kolkata';
+
+const toDateOrNull = (value) => {
+  if (!value) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
 };
+
+const getISTParts = (date) => {
+  const d = toDateOrNull(date);
+  if (!d) return null;
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: IST_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+
+  const map = Object.fromEntries(parts.filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+  return {
+    year: Number(map.year),
+    month: Number(map.month),
+    day: Number(map.day),
+    hour: Number(map.hour),
+    minute: Number(map.minute),
+    second: Number(map.second),
+  };
+};
+
+/**
+ * Get current instant. Naming kept for compatibility.
+ * @returns {Date}
+ */
+export const getNowIST = () => new Date();
 
 /**
  * Convert any date to IST
  * @param {Date|string|number} date - Date to convert
  * @returns {Date} Date converted to IST
  */
-export const toIST = (date) => {
-  if (!date) return getNowIST();
-  
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d.getTime())) return getNowIST();
-  
-  // Convert to UTC first, then add IST offset
-  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-  return new Date(utc + IST_OFFSET_MS);
-};
+export const toIST = (date) => toDateOrNull(date) || new Date();
 
 /**
  * Format IST date as ISO string (YYYY-MM-DD)
@@ -45,10 +64,11 @@ export const toIST = (date) => {
  * @returns {string} ISO date string
  */
 export const formatISTDate = (date) => {
-  const d = date instanceof Date ? date : toIST(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const parts = getISTParts(date);
+  if (!parts) return '';
+  const year = String(parts.year).padStart(4, '0');
+  const month = String(parts.month).padStart(2, '0');
+  const day = String(parts.day).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
@@ -58,9 +78,10 @@ export const formatISTDate = (date) => {
  * @returns {string} Time string in HH:MM format
  */
 export const formatISTTime = (date) => {
-  const d = date instanceof Date ? date : toIST(date);
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const parts = getISTParts(date);
+  if (!parts) return '';
+  const hours = String(parts.hour).padStart(2, '0');
+  const minutes = String(parts.minute).padStart(2, '0');
   return `${hours}:${minutes}`;
 };
 
@@ -71,14 +92,14 @@ export const formatISTTime = (date) => {
  * @returns {string} Formatted date string
  */
 export const formatISTDisplay = (date, options = {}) => {
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d.getTime())) return '';
-  
+  const d = toDateOrNull(date);
+  if (!d) return '';
+
   const defaultOptions = {
-    timeZone: 'Asia/Kolkata',
-    ...options
+    timeZone: IST_TIME_ZONE,
+    ...options,
   };
-  
+
   return d.toLocaleString('en-IN', defaultOptions);
 };
 
@@ -147,19 +168,22 @@ export const getISTDateTime = () => {
  * Get IST year
  * @returns {number} Current year in IST
  */
-export const getISTYear = () => getNowIST().getFullYear();
+export const getISTYear = () => getISTParts(new Date())?.year ?? new Date().getFullYear();
 
 /**
  * Get IST month (0-indexed)
  * @returns {number} Current month in IST (0 = January)
  */
-export const getISTMonth = () => getNowIST().getMonth();
+export const getISTMonth = () => {
+  const parts = getISTParts(new Date());
+  return parts ? parts.month - 1 : new Date().getMonth();
+};
 
 /**
  * Get IST date of month
  * @returns {number} Current date in IST
  */
-export const getISTDateOfMonth = () => getNowIST().getDate();
+export const getISTDateOfMonth = () => getISTParts(new Date())?.day ?? new Date().getDate();
 
 /**
  * Parse a date string and return Date object
@@ -168,9 +192,10 @@ export const getISTDateOfMonth = () => getNowIST().getDate();
  * @returns {Date} Date object
  */
 export const parseISTDate = (dateStr) => {
-  if (!dateStr) return getNowIST();
+  if (!dateStr) return new Date();
   const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day, 0, 0, 0, 0);
+  if ([year, month, day].some(n => Number.isNaN(n))) return new Date();
+  return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) - IST_OFFSET_MS);
 };
 
 /**
@@ -180,11 +205,11 @@ export const parseISTDate = (dateStr) => {
  * @returns {string} Relative time string
  */
 export const getRelativeTimeIST = (date) => {
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d.getTime())) return '';
-  
-  const now = getNowIST();
-  const diffMs = now.getTime() - toIST(d).getTime();
+  const d = toDateOrNull(date);
+  if (!d) return '';
+
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);

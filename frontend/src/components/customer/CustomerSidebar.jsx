@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Home, FileText, Calendar, PieChart, User, Receipt, Bell, Leaf, Sparkles, TreePine, Droplets } from 'lucide-react';
-import { getNowIST } from '../../utils/timezone';
+import { formatISTDate, getTodayIST } from '../../utils/timezone';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
 
@@ -22,11 +22,10 @@ const CustomerSidebar = ({ activeTab, onNavigate, receipts = [] }) => {
     const waterSaved = paperSaved * waterPerKgPaper;
     
     // Get this month's receipts using IST
-    const now = getNowIST();
+    const monthPrefix = getTodayIST().slice(0, 7); // YYYY-MM
     const thisMonthReceipts = receipts.filter(r => {
-      const receiptDate = new Date(r.date || r.createdAt);
-      return receiptDate.getMonth() === now.getMonth() && 
-             receiptDate.getFullYear() === now.getFullYear();
+      const dateStr = (r.date && String(r.date).slice(0, 10)) || formatISTDate(r.createdAt);
+      return dateStr ? dateStr.startsWith(monthPrefix) : false;
     });
     const monthlyPaperSaved = thisMonthReceipts.length * paperPerReceipt;
     

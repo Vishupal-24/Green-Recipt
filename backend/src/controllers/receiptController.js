@@ -1,7 +1,7 @@
 import Receipt from "../models/Receipt.js";
 import Merchant from "../models/Merchant.js";
 import User from "../models/User.js";
-import { getNowIST, normalizeToIST, formatISTDate, formatISTTime, toIST } from "../utils/timezone.js";
+import { getNowIST, normalizeToIST, formatISTDate, formatISTTime } from "../utils/timezone.js";
 import { clearAnalyticsCache } from "./analyticsController.js";
 import { sendReceiptEmail } from "../utils/sendEmail.js";
 
@@ -26,10 +26,9 @@ const computeTotal = (items) =>
   items.reduce((sum, item) => sum + (item.unitPrice || 0) * (item.quantity || 0), 0);
 
 const mapReceiptToClient = (receipt) => {
-  // Convert transaction date to IST for display
-  const transactionDateIST = toIST(receipt.transactionDate || receipt.createdAt);
-  const isoDate = formatISTDate(transactionDateIST);
-  const time = formatISTTime(transactionDateIST);
+  const transactionInstant = receipt.transactionDate || receipt.createdAt;
+  const isoDate = formatISTDate(transactionInstant);
+  const time = formatISTTime(transactionInstant);
 
   // Use receipt category first, fall back to merchant's businessCategory, then "general"
   const resolvedCategory = receipt.category || receipt.merchantSnapshot?.businessCategory || "general";
@@ -58,9 +57,9 @@ const mapReceiptToClient = (receipt) => {
     footer: receipt.footer || receipt.merchantSnapshot?.receiptFooter || "",
     status: receipt.status,
     paymentMethod: receipt.paymentMethod,
-    paidAt: receipt.paidAt ? toIST(receipt.paidAt).toISOString() : null, // When merchant confirmed payment (IST)
-    createdAt: receipt.createdAt ? toIST(receipt.createdAt).toISOString() : null,
-    updatedAt: receipt.updatedAt ? toIST(receipt.updatedAt).toISOString() : null,
+    paidAt: receipt.paidAt ? new Date(receipt.paidAt).toISOString() : null,
+    createdAt: receipt.createdAt ? new Date(receipt.createdAt).toISOString() : null,
+    updatedAt: receipt.updatedAt ? new Date(receipt.updatedAt).toISOString() : null,
   };
 };
 
@@ -301,7 +300,7 @@ export const claimReceipt = async (req, res) => {
         customerName: user.name || "Customer",
         merchantName: receiptForEmail.merchantSnapshot?.shopName || "Merchant",
         total: receiptForEmail.total || 0,
-        date: formatISTDate(toIST(receiptForEmail.transactionDate || receiptForEmail.createdAt)),
+        date: formatISTDate(receiptForEmail.transactionDate || receiptForEmail.createdAt),
         items: receiptForEmail.items || [],
         paymentMethod: receiptForEmail.paymentMethod || "N/A"
       }).catch((err) => {

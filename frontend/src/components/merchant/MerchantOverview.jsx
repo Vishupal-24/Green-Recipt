@@ -471,14 +471,14 @@ const MerchantOverview = () => {
 
   // --- 📊 NEW LOGIC FOR DASHBOARD CARD ---
 
-  // 1. Current Month Logic
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  // 1. Current Month Logic (IST)
+  const [currentYearStr, currentMonthStr] = todayStr.split("-");
+  const monthPrefix = `${currentYearStr}-${currentMonthStr}`;
+  const yearPrefix = `${currentYearStr}-`;
 
   const monthBills = sales.filter((bill) => {
-    const d = toValidDate(bill.date);
-    if (!d) return false;
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    const d = typeof bill.date === "string" ? bill.date : toDateString(bill.date);
+    return d ? d.startsWith(monthPrefix) : false;
   });
 
   const monthSales = monthBills.reduce(
@@ -499,11 +499,11 @@ const MerchantOverview = () => {
     .filter((b) => (b.paymentMethod || "").toLowerCase().includes("cash"))
     .reduce((sum, b) => sum + (b.total ?? b.amount ?? 0), 0);
 
-  // 3. Yearly Logic (Simple filter)
+  // 3. Yearly Logic (IST)
   const yearSales = sales
     .filter((b) => {
-      const d = toValidDate(b.date);
-      return d ? d.getFullYear() === currentYear : false;
+      const d = typeof b.date === "string" ? b.date : toDateString(b.date);
+      return d ? d.startsWith(yearPrefix) : false;
     })
     .reduce((sum, b) => sum + (b.total ?? b.amount ?? 0), 0);
 
@@ -511,19 +511,17 @@ const MerchantOverview = () => {
 
   // ... existing month logic ...
 
-  // 📊 NEW: Weekly Logic (Current Week)
-  const todayDate = getNowIST();
-  const firstDayOfWeek = new Date(todayDate);
-  // Adjust to get Monday (or Sunday) as start of week
-  const day = firstDayOfWeek.getDay();
-  const diff = firstDayOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  firstDayOfWeek.setDate(diff);
-  firstDayOfWeek.setHours(0, 0, 0, 0);
+  // 📊 NEW: Weekly Logic (Current Week, Monday start, IST)
+  const istWeekdayShort = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", weekday: "short" }).format(new Date());
+  const istDayIndex = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[istWeekdayShort] ?? 0;
+  const daysSinceMonday = istDayIndex === 0 ? 6 : istDayIndex - 1;
+  const weekStartInstant = new Date(Date.now() - daysSinceMonday * 86400000);
+  const weekStartStr = formatISTDate(weekStartInstant);
 
   const weekBills = sales.filter((bill) => {
-    const billDate = toValidDate(bill.date);
-    if (!billDate) return false;
-    return billDate >= firstDayOfWeek && billDate <= todayDate;
+    const billDateStr = typeof bill.date === "string" ? bill.date : toDateString(bill.date);
+    if (!billDateStr) return false;
+    return billDateStr >= weekStartStr && billDateStr <= todayStr;
   });
 
   const weekSales = weekBills.reduce(
@@ -534,10 +532,7 @@ const MerchantOverview = () => {
   // Trending Items Logic - Using IST for 7-day window
   const trendingItems = useMemo(() => {
     const allItems = {};
-    const now = getNowIST();
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const sevenDaysAgoStr = formatISTDate(sevenDaysAgo);
+    const sevenDaysAgoStr = formatISTDate(new Date(Date.now() - 7 * 86400000));
 
     sales.forEach((bill) => {
       if (bill.date >= sevenDaysAgoStr && bill.items) {

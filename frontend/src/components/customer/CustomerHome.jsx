@@ -151,7 +151,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
   );
 
   const todaySpent = useMemo(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayIST();
     return receipts
       .filter(r => !r.excludeFromStats && (r.date || r.transactionDate || '').startsWith(todayStr))
       .reduce((sum, r) => sum + (r.amount || 0), 0);

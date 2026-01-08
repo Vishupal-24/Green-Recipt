@@ -1890,7 +1890,7 @@ const MerchantBilling = ({ inventory, profile }) => {
         items: cart.map(item => ({ name: item.name, unitPrice: item.price, quantity: item.quantity })),
         source: 'qr',
         paymentMethod: 'other', // Actual method is confirmed later
-        transactionDate: getNowIST().toISOString(),
+        transactionDate: new Date().toISOString(),
         total: cartTotal,
         footer: merchantProfile.receiptFooter,
         status: 'pending',
