@@ -395,12 +395,13 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
   };
 
   const getPaymentInfo = () => {
+    if (!isPaid) return { label: 'Pending', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100' };
     const method = data.paymentMethod?.toLowerCase();
     if (method === 'upi') return { label: 'UPI', icon: Smartphone, color: 'text-emerald-600', bg: 'bg-emerald-50' };
     if (method === 'cash') return { label: 'Cash', icon: Banknote, color: 'text-amber-600', bg: 'bg-amber-50' };
     if (method === 'card') return { label: 'Card', icon: CreditCard, color: 'text-blue-600', bg: 'bg-blue-50' };
     if (method === 'other') return { label: 'Other', icon: Clock, color: 'text-slate-600', bg: 'bg-slate-100' };
-    return { label: 'Pending', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-100' };
+    return { label: 'Other', icon: Clock, color: 'text-slate-600', bg: 'bg-slate-100' };
   };
 
   const paymentInfo = getPaymentInfo();
