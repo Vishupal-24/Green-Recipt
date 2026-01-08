@@ -96,7 +96,7 @@
 //                 required
 //                 onChange={handleChange}
 //                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-600/50"
-//                 placeholder="Aryan Sharma"
+//                 placeholder="Your Name"
 //               />
 //             </div>
 
