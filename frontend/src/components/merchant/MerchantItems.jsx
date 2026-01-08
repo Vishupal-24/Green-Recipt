@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Package, PlusCircle, Trash2, Tag, Pencil, Save, X, Search, 
   Filter, Settings, Plus, ChevronDown, Check, AlertCircle, Loader2,
-  ToggleLeft, ToggleRight, Image as ImageIcon, RefreshCw
+  ToggleLeft, ToggleRight, Image as ImageIcon, RefreshCw, Upload
 } from 'lucide-react';
 import * as api from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -45,6 +45,24 @@ const MerchantItems = () => {
     isAvailable: true,
     imageUrl: '',
   });
+
+  const fileInputRef = useRef(null);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB limit
+        showToast('Image size should be less than 2MB', 'error');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setItemForm(prev => ({ ...prev, imageUrl: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // ==========================================
   // DATA FETCHING
@@ -931,38 +949,41 @@ const MerchantItems = () => {
 
               <div>
                 <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Description
+                  Item Image
                 </label>
-                <textarea
-                  value={itemForm.description}
-                  onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                  placeholder="Brief description of the item..."
-                  rows={2}
-                  className={`w-full rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none ${
-                    isDark 
-                      ? 'bg-dark-surface border border-dark-border text-white placeholder-slate-500' 
-                      : 'border border-slate-200'
-                  }`}
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Image URL
-                </label>
-                <div className="relative">
-                  <ImageIcon className={`absolute left-4 top-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} size={18} />
-                  <input
-                    type="url"
-                    value={itemForm.imageUrl}
-                    onChange={(e) => setItemForm({ ...itemForm, imageUrl: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    className={`w-full rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none ${
-                      isDark 
-                        ? 'bg-dark-surface border border-dark-border text-white placeholder-slate-500' 
-                        : 'border border-slate-200'
-                    }`}
-                  />
+                <div className="flex items-center gap-4">
+                  <div className={`w-20 h-20 rounded-xl border flex items-center justify-center overflow-hidden relative group ${isDark ? 'border-dark-border bg-dark-surface' : 'border-slate-200 bg-slate-50'}`}>
+                    {itemForm.imageUrl ? (
+                      <img src={itemForm.imageUrl} alt="Preview" className="w-full h-full object-cover"/>
+                    ) : (
+                      <ImageIcon className={`text-slate-400`} size={24} />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                     <label className={`cursor-pointer px-4 py-2 rounded-xl text-sm font-bold inline-flex items-center gap-2 transition-all ${isDark ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+                        <Upload size={16} />
+                        <span>Upload Image</span>
+                        <input 
+                            ref={fileInputRef}
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden" 
+                            onChange={handleImageUpload}
+                        />
+                    </label>
+                    {itemForm.imageUrl && (
+                        <button 
+                            type="button"
+                            onClick={() => setItemForm({...itemForm, imageUrl: ''})}
+                            className="ml-2 px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Remove
+                        </button>
+                    )}
+                    <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        Max size: 2MB. Format: JPG, PNG.
+                    </p>
+                  </div>
                 </div>
               </div>
 
