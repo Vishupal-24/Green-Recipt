@@ -5,7 +5,7 @@ import {
   TrendingUp, TrendingDown, Wallet, QrCode, UploadCloud, X, Save,
   Image as ImageIcon, Calendar, PieChart, Store, CheckCircle, Loader2,
   Receipt, Sparkles, ArrowUpRight, ArrowDownRight, Smartphone, Banknote,
-  ChevronRight, Clock, Zap, Target
+  ChevronRight, Clock, Zap, Target, CreditCard
 } from 'lucide-react';
 import { fetchCustomerReceipts, createReceipt, fetchCustomerAnalytics } from '../../services/api';
 import toast from 'react-hot-toast';
@@ -169,6 +169,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
   const [manualAmount, setManualAmount] = useState(""); 
   const [manualMerchant, setManualMerchant] = useState(""); 
   const [manualDate, setManualDate] = useState(getTodayIST()); // IST date
+  const [manualPaymentMethod, setManualPaymentMethod] = useState('upi');
   const [includeInStats, setIncludeInStats] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -211,6 +212,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
         setManualAmount(""); 
         setManualMerchant(""); 
         setManualDate(getTodayIST()); // Reset to today IST
+        setManualPaymentMethod('upi');
         setIncludeInStats(true);
       };
       reader.readAsDataURL(file);
@@ -232,7 +234,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
         imageUrl: pendingFile.url,
         note: pendingFile.name,
         excludeFromStats: !includeInStats,
-        paymentMethod: "other",
+        paymentMethod: manualPaymentMethod,
       };
 
       const { data: newReceipt } = await createReceipt(payload);
@@ -241,6 +243,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
       setManualAmount("");
       setManualMerchant("");
       setManualDate(getTodayIST()); // Reset to today IST
+      setManualPaymentMethod('upi');
       setIncludeInStats(true);
       window.dispatchEvent(new Event("customer-receipts-updated"));
       toast.success(t('receipts.uploadSuccess'));
@@ -512,6 +515,35 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
                       className={`w-full pl-9 md:pl-10 pr-4 py-2.5 md:py-3 border rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                       required
                     />
+                  </div>
+                </div>
+
+                {/* Payment Method */}
+                <div>
+                  <label className={`block text-[10px] md:text-xs font-bold uppercase mb-1.5 md:mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('receipts.paymentMethod')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'upi', label: t('dashboard.upi'), icon: Smartphone },
+                      { id: 'cash', label: t('dashboard.cash'), icon: Banknote },
+                      { id: 'card', label: t('receipts.card'), icon: CreditCard },
+                      { id: 'other', label: 'Other', icon: Clock },
+                    ].map((pm) => (
+                      <button
+                        key={pm.id}
+                        type="button"
+                        onClick={() => setManualPaymentMethod(pm.id)}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all ${
+                          manualPaymentMethod === pm.id
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : isDark
+                              ? 'bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600'
+                              : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <pm.icon size={14} />
+                        <span>{pm.label}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 

@@ -543,39 +543,68 @@ const CustomerInsights = () => {
             <div className={`p-5 rounded-2xl border shadow-sm ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'}`}>
               <h3 className={`font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-700'}`}>{t('receipts.paymentMethod')}</h3>
               
-              {/* Payment Summary Cards - UPI vs Cash */}
+              {/* Payment Summary Cards */}
               <div className="grid grid-cols-2 gap-4 mb-4">
-                {/* UPI Card */}
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100'}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 bg-emerald-500 rounded-lg">
-                      <Smartphone size={18} className="text-white" />
+                {[ 
+                  {
+                    id: 'upi',
+                    title: t('insights.upiPayments'),
+                    icon: Smartphone,
+                    container: isDark ? 'bg-emerald-900/30 border-emerald-800' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-100',
+                    iconBg: 'bg-emerald-500',
+                    titleColor: isDark ? 'text-emerald-400' : 'text-emerald-800',
+                    valueColor: isDark ? 'text-emerald-300' : 'text-emerald-700',
+                    metaColor: isDark ? 'text-emerald-400' : 'text-emerald-600',
+                  },
+                  {
+                    id: 'cash',
+                    title: t('insights.cashPayments'),
+                    icon: Banknote,
+                    container: isDark ? 'bg-amber-900/30 border-amber-800' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100',
+                    iconBg: 'bg-amber-500',
+                    titleColor: isDark ? 'text-amber-400' : 'text-amber-800',
+                    valueColor: isDark ? 'text-amber-300' : 'text-amber-700',
+                    metaColor: isDark ? 'text-amber-400' : 'text-amber-600',
+                  },
+                  {
+                    id: 'card',
+                    title: t('receipts.card'),
+                    icon: CreditCard,
+                    container: isDark ? 'bg-blue-900/30 border-blue-800' : 'bg-gradient-to-br from-blue-50 to-sky-50 border-blue-100',
+                    iconBg: 'bg-blue-500',
+                    titleColor: isDark ? 'text-blue-400' : 'text-blue-800',
+                    valueColor: isDark ? 'text-blue-300' : 'text-blue-700',
+                    metaColor: isDark ? 'text-blue-400' : 'text-blue-600',
+                  },
+                  {
+                    id: 'other',
+                    title: 'Other',
+                    icon: Wallet,
+                    container: isDark ? 'bg-slate-700/50 border-slate-600' : 'bg-gradient-to-br from-slate-50 to-gray-50 border-slate-100',
+                    iconBg: isDark ? 'bg-slate-600' : 'bg-slate-500',
+                    titleColor: isDark ? 'text-slate-300' : 'text-slate-700',
+                    valueColor: isDark ? 'text-slate-200' : 'text-slate-800',
+                    metaColor: isDark ? 'text-slate-400' : 'text-slate-500',
+                  },
+                ].map((pm) => {
+                  const found = paymentMethods.find(x => x.method?.toLowerCase() === pm.id);
+                  const total = found?.total || 0;
+                  const count = found?.count || 0;
+                  const Icon = pm.icon;
+
+                  return (
+                    <div key={pm.id} className={`p-4 rounded-xl border ${pm.container}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`p-2 ${pm.iconBg} rounded-lg`}>
+                          <Icon size={18} className="text-white" />
+                        </div>
+                        <span className={`font-bold ${pm.titleColor}`}>{pm.title}</span>
+                      </div>
+                      <p className={`text-2xl font-bold ${pm.valueColor}`}>₹{total.toLocaleString('en-IN')}</p>
+                      <p className={`text-xs mt-1 ${pm.metaColor}`}>{count} {t('insights.transactions')}</p>
                     </div>
-                    <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-800'}`}>{t('insights.upiPayments')}</span>
-                  </div>
-                  <p className={`text-2xl font-bold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-                    ₹{(paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.total || 0).toLocaleString('en-IN')}
-                  </p>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    {paymentMethods.find(pm => pm.method?.toLowerCase() === 'upi')?.count || 0} {t('insights.transactions')}
-                  </p>
-                </div>
-                
-                {/* Cash Card */}
-                <div className={`p-4 rounded-xl border ${isDark ? 'bg-amber-900/30 border-amber-800' : 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100'}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="p-2 bg-amber-500 rounded-lg">
-                      <Banknote size={18} className="text-white" />
-                    </div>
-                    <span className={`font-bold ${isDark ? 'text-amber-400' : 'text-amber-800'}`}>{t('insights.cashPayments')}</span>
-                  </div>
-                  <p className={`text-2xl font-bold ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-                    ₹{(paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.total || 0).toLocaleString('en-IN')}
-                  </p>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
-                    {paymentMethods.find(pm => pm.method?.toLowerCase() === 'cash')?.count || 0} {t('insights.transactions')}
-                  </p>
-                </div>
+                  );
+                })}
               </div>
 
             </div>
