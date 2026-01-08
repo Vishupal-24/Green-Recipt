@@ -556,9 +556,20 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
               {!isQR && data.image && (
                  <div className="mb-4">
                   <h4 className={`text-xs font-bold uppercase mb-3 flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}><Image size={14} /> Receipt Image</h4>
-                  <div className={`aspect-[4/3] rounded-xl overflow-hidden border ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-slate-100 border-slate-200'}`}>
-                    <img src={data.image} alt="Receipt" className="w-full h-full object-cover" />
-                  </div>
+                  <a
+                    href={data.image}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`block aspect-[4/3] rounded-xl overflow-hidden border ${isDark ? 'bg-dark-surface border-dark-border' : 'bg-slate-100 border-slate-200'}`}
+                    title="Open full image"
+                  >
+                    <img
+                      src={data.image}
+                      alt="Receipt"
+                      className="w-full h-full object-contain cursor-zoom-in"
+                      loading="lazy"
+                    />
+                  </a>
                 </div>
               )}
 
