@@ -293,7 +293,8 @@ export const completeOnboarding = async (req, res) => {
 		}
 
 		merchant.isProfileComplete = true;
-		merchant.onboardingStep = Math.max(merchant.onboardingStep, 2);
+		// Completing onboarding should move to the final step.
+		merchant.onboardingStep = Math.max(merchant.onboardingStep, 5);
 		await merchant.save();
 
 		res.json({
