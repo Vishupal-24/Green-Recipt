@@ -20,6 +20,11 @@ const receiptSchema = new mongoose.Schema(
       ref: "Merchant",
       required: false,
     },
+    merchantCode: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -110,6 +115,7 @@ const receiptSchema = new mongoose.Schema(
 );
 
 receiptSchema.index({ merchantId: 1, transactionDate: -1 });
+receiptSchema.index({ merchantCode: 1, transactionDate: -1 });
 receiptSchema.index({ userId: 1, transactionDate: -1 });
 receiptSchema.index({ source: 1 });
 receiptSchema.index({ excludeFromStats: 1 });
