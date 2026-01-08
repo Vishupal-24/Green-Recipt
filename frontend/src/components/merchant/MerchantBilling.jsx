@@ -1995,21 +1995,44 @@ const MerchantBilling = ({ inventory, profile }) => {
                             key={item.id} 
                             onClick={() => addToCart(item)} 
                             className={`
-                               ${isDark ? 'bg-dark-surface border-dark-border hover:border-emerald-500/50' : 'bg-white border-slate-200'} border shadow-sm active:scale-95 transition-all text-left flex flex-col justify-between relative overflow-hidden group
-                               rounded-xl
-                               h-20 md:h-28       
-                               p-2 md:p-3
+                               ${isDark ? 'bg-dark-surface border-dark-border hover:border-emerald-500/50' : 'bg-white border-slate-200 hover:border-emerald-500'} 
+                               border shadow-sm active:scale-95 transition-all text-left flex flex-col relative overflow-hidden group
+                               rounded-2xl
+                               h-48 md:h-56
                             `}
                           >
-                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-500 text-white rounded-full p-0.5 md:p-1">
-                                <Plus size={12} className="md:w-4 md:h-4" />
+                              {/* Image Section */}
+                              <div className={`h-24 md:h-32 w-full relative overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                                  {item.imageUrl ? (
+                                      <img 
+                                          src={item.imageUrl} 
+                                          alt={item.name} 
+                                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                      />
+                                  ) : (
+                                      <div className={`w-full h-full flex flex-col items-center justify-center ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>
+                                          <ShoppingBag size={24} className="mb-1 opacity-50" />
+                                          <span className="text-[9px] uppercase font-bold opacity-50">No Image</span>
+                                      </div>
+                                  )}
+                                  
+                                  {/* Gradient Overlay */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"/>
+
+                                  {/* Plus Button Overlay */}
+                                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 bg-emerald-600 text-white rounded-full p-1.5 shadow-lg">
+                                    <Plus size={14} className="md:w-4 md:h-4" />
+                                  </div>
                               </div>
-                              
-                              <div>
-                                <div className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'} text-xs md:text-sm leading-tight line-clamp-2`}>{item.name}</div>
-                                <div className={`text-[9px] md:text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} font-bold uppercase mt-0.5 tracking-wide`}>{item.category}</div>
+
+                              {/* Content Section */}
+                              <div className="p-3 flex flex-col justify-between flex-1 w-full">
+                                  <div>
+                                    <div className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'} text-xs md:text-sm leading-tight line-clamp-2`}>{item.name}</div>
+                                    <div className={`text-[9px] md:text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'} font-bold uppercase mt-1 tracking-wide bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md inline-block`}>{item.category}</div>
+                                  </div>
+                                  <div className="text-sm md:text-lg font-black text-emerald-500">₹{item.price}</div>
                               </div>
-                              <div className="text-xs md:text-base font-black text-emerald-500">₹{item.price}</div>
                           </button>
                       ))}
                   </div>

@@ -93,6 +93,7 @@ const MerchantDashboard = () => {
           price: item.price,
           category: item.categoryId?.name || 'Other',
           isAvailable: item.isAvailable,
+          imageUrl: item.imageUrl,
         }));
         setInventory(items);
       } catch (err) {
