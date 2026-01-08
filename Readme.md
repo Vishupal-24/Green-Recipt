@@ -1,5 +1,258 @@
 # GreenReceipt
 
+Digital receipts for customers + a lightweight dashboard for merchants.
+
+- Live app: https://green-recipt.vercel.app
+- Backend health check: `GET /api/health`
+
+---
+
+## Repo layout
+
+- `backend/` – Express + MongoDB API
+- `frontend/` – React (Vite) web app
+
+---
+
+## What’s implemented (high level)
+
+- Customer + merchant auth
+  - Access token (Bearer) + refresh token stored in an HTTP-only cookie
+  - OTP-based email verification flow for signup
+- Receipts
+  - Merchants create receipts
+  - Customers claim receipts via claim code
+- Analytics endpoints for customer + merchant dashboards
+- UI conveniences
+  - Dark mode
+  - i18n scaffolding (English/Hindi)
+  - PWA assets (manifest + service worker)
+
+---
+
+## Tech stack
+
+**Frontend**
+
+- React + Vite
+- Tailwind CSS
+- Axios (configured with `withCredentials: true` for refresh cookie support)
+
+**Backend**
+
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT auth (access token + refresh token)
+- Security middleware: `helmet`, `express-rate-limit`, `express-mongo-sanitize`, `hpp`, `compression`
+- Email delivery: SendGrid (optional in local dev)
+
+---
+
+## Prerequisites
+
+- Node.js 18+
+- MongoDB (local or Atlas)
+
+Optional (but recommended if you want emails/OTP in your inbox):
+
+- SendGrid account + API key
+
+---
+
+## Environment variables
+
+### Backend (`backend/.env`)
+
+Required:
+
+```env
+MONGO_URI=mongodb://localhost:27017/greenreceipt
+JWT_SECRET=your_secure_random_string_min_32_chars
+```
+
+Optional:
+
+```env
+# Server
+PORT=5001
+NODE_ENV=development
+
+# CORS allowlist (comma-separated). If omitted, defaults include:
+# - http://localhost:5173
+# - https://green-recipt.vercel.app
+CLIENT_URL=http://localhost:5173
+
+# Refresh token signing secret (defaults to JWT_SECRET + "_refresh")
+REFRESH_TOKEN_SECRET=your_refresh_secret
+
+# SendGrid (if not set, backend will skip sending emails)
+SENDGRID_API_KEY=...
+SENDGRID_FROM_EMAIL=...
+```
+
+Important note about OTP/email in development:
+
+- If SendGrid is not configured, the backend will **skip sending emails**.
+- When `NODE_ENV` is not `production`, OTPs are logged to the backend console (look for `[DEV] ... OTP ...`).
+
+### Frontend (`frontend/.env`)
+
+Optional (defaults to `http://localhost:5001/api`):
+
+```env
+VITE_API_URL=http://localhost:5001/api
+```
+
+---
+
+## Run locally
+
+### 1) Install dependencies
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+### 2) Start backend
+
+```bash
+cd backend
+npm run dev
+```
+
+By default the API runs on `http://localhost:5001`.
+
+### 3) Start frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+By default Vite runs on `http://localhost:5173`.
+
+---
+
+## Auth + cookies (important for local + production)
+
+- Frontend requests include cookies (`withCredentials: true`).
+- Backend enables CORS credentials and validates origins against `CLIENT_URL`.
+- In production (`NODE_ENV=production`), refresh cookies are set with `SameSite=None; Secure`.
+
+If you see “CORS not allowed” or refresh doesn’t work:
+
+- Ensure `CLIENT_URL` includes the exact frontend origin (scheme + host + port).
+- Ensure you are using HTTPS in production (required for `Secure` cookies).
+
+---
+
+## API quick reference
+
+Base URL: `/api`
+
+### Health
+
+- `GET /api/health`
+
+### Auth
+
+- `POST /api/auth/send-signup-otp`
+- `POST /api/auth/verify-signup-otp`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh` (uses refresh cookie)
+- `POST /api/auth/logout`
+- `GET /api/auth/session` (protected)
+- `GET /api/auth/me` (protected)
+- `PATCH /api/auth/me` (protected)
+
+Legacy (kept for backward compatibility):
+
+- `POST /api/auth/signup/customer`
+- `POST /api/auth/signup/merchant`
+- `POST /api/auth/otp/request`
+- `POST /api/auth/otp/verify`
+
+### Receipts
+
+- `POST /api/receipts` (merchant/customer; rate-limited)
+- `GET /api/receipts/customer` (customer)
+- `GET /api/receipts/merchant` (merchant)
+- `POST /api/receipts/claim` (customer)
+- `PATCH /api/receipts/:id/mark-paid` (merchant)
+- `PATCH /api/receipts/:id` (protected)
+- `DELETE /api/receipts/:id` (protected)
+- `GET /api/receipts/:id` (protected)
+
+### Analytics
+
+- `GET /api/analytics/customer` (customer)
+- `GET /api/analytics/merchant` (merchant)
+
+### Merchant (merchant-only)
+
+- Onboarding: `/api/merchant/onboarding/*`
+- Categories: `/api/merchant/categories*`
+- Items: `/api/merchant/items*`
+
+---
+
+## Scripts
+
+### Backend
+
+- Dev server: `npm run dev`
+- Production server: `npm start`
+
+Receipt date migration (requires `MONGO_URI`):
+
+```bash
+cd backend
+
+# Dry run (default)
+npm run migrate:receipt-dates
+
+# Apply changes
+node scripts/migrate-receipt-dates.js --shiftMinutes -660 --apply
+```
+
+---
+
+## Deployment notes
+
+### Frontend (Vercel)
+
+The repo includes a SPA rewrite config (`frontend/vercel.json`).
+
+Set:
+
+- `VITE_API_URL` = `https://<your-backend-domain>/api`
+
+### Backend (Render / any Node host)
+
+Set at least:
+
+- `MONGO_URI`
+- `JWT_SECRET`
+- `CLIENT_URL` (comma-separated allowlist; include your Vercel domain)
+
+Optional:
+
+- `REFRESH_TOKEN_SECRET`
+- `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL`
+
+---
+
+## Troubleshooting
+
+- **MongoDB won’t connect**: verify `MONGO_URI` is set and reachable.
+- **OTP email not received**: configure SendGrid, or check backend logs for `[DEV] ... OTP ...` in non-production.
+- **Refresh/login issues on Vercel + hosted API**: ensure `NODE_ENV=production`, HTTPS, and `CLIENT_URL` matches your frontend origin exactly.
+# GreenReceipt
+
 <div align="center">
 
 [![Live Demo](https://img.shields.io/badge/Live-green--recipt.vercel.app-22c55e?style=for-the-badge&logo=vercel&logoColor=white)](https://green-recipt.vercel.app)
