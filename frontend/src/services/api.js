@@ -267,8 +267,8 @@ api.interceptors.response.use(
           onRefreshFailed(refreshError);
           
           // Refresh failed, redirect to login
-          clearSession();
           const role = getStoredRole() || localStorage.getItem(ROLE_KEY);
+          clearSession();
           const redirect = role === "merchant" ? "/merchant-login" : "/customer-login";
           if (typeof window !== "undefined") {
             window.location.replace(redirect);
@@ -279,8 +279,8 @@ api.interceptors.response.use(
       
       // Other 401 errors (invalid token, etc.) - clear session and redirect
       if (errorCode !== "TOKEN_EXPIRED") {
+        const role = error.response?.data?.role || getStoredRole() || localStorage.getItem(ROLE_KEY);
         clearSession();
-        const role = error.response?.data?.role || getStoredRole();
         const redirect = role === "merchant" ? "/merchant-login" : "/customer-login";
         if (typeof window !== "undefined") {
           window.location.replace(redirect);

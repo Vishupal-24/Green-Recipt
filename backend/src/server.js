@@ -23,13 +23,13 @@ connectDB();
 
 // Security & middleware
 const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(",")
+  ? process.env.CLIENT_URL.split(",").map((o) => o.trim()).filter(Boolean)
   : ["http://localhost:5173", "https://green-recipt.vercel.app"];
 
 const corsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true); // Allow non-browser clients
-    if (allowedOrigins.includes(origin) || origin.includes("vercel.app")) {
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error("CORS not allowed"), false);
