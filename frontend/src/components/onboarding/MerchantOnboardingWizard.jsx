@@ -149,9 +149,11 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
 												setCustomCategory("");
 												updateField("businessCategory", cat);
 											}}
-											className={`p-3 rounded-xl border-2 text-left transition-all ${
-												isSelected ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-slate-300"
-											}`}
+										className={`p-3 rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+											isSelected
+												? "border-emerald-500 bg-emerald-50 text-emerald-700"
+												: "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+										}`}
 										>
 											<span className="text-sm font-medium">{cat}</span>
 										</button>
@@ -163,8 +165,10 @@ const MerchantOnboardingWizard = ({ onComplete, initialData = {} }) => {
 										setCategoryMode("other");
 										updateField("businessCategory", customCategory.trim());
 									}}
-									className={`p-3 rounded-xl border-2 text-left transition-all ${
-										categoryMode === "other" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 hover:border-slate-300"
+									className={`p-3 rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+										categoryMode === "other"
+											? "border-emerald-500 bg-emerald-50 text-emerald-700"
+											: "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
 									}`}
 								>
 									<span className="text-sm font-medium">Other</span>
