@@ -274,6 +274,7 @@
   "upload": {
     "title": "Upload Receipt",
     "dragDrop": "Drag & drop or click to upload",
+    "imageTooLarge": "Image is too large (Max 2MB)",
     "selectFile": "Select File",
     "merchant": "Merchant Name",
     "merchantPlaceholder": "e.g. Starbucks, Uber",

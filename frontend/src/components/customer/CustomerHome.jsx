@@ -196,9 +196,18 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
   const handleFilePick = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Keep uploads reasonably small since we store them as base64 data URLs.
+      const MAX_BYTES = 2 * 1024 * 1024; // 2MB
+      if (file.size > MAX_BYTES) {
+        toast.error(t('upload.imageTooLarge'));
+        // Allow re-selecting the same file after an error
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPendingFile({ url: reader.result, name: file.name });
+        setPendingFile({ url: reader.result, name: file.name, size: file.size, type: file.type });
         setManualAmount(""); 
         setManualMerchant(""); 
         setManualDate(getTodayIST()); // Reset to today IST
@@ -237,7 +246,7 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
       toast.success(t('receipts.uploadSuccess'));
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error(error.response?.data?.message || t('receipts.uploadFailed'));
+      toast.error(error.response?.data?.message || error.userMessage || t('receipts.uploadFailed'));
     } finally {
       setIsUploading(false);
     }
