@@ -148,9 +148,23 @@ export const updateProfileSchema = {
 			// Merchant fields
 			shopName: optionalString(120),
 			ownerName: optionalString(120),
+			receiptHeader: optionalString(200),
 			receiptFooter: optionalString(200),
+			brandColor: optionalString(30),
+			// Can be a normal URL or a base64 data URL (logo uploads)
+			// Note: length is in characters; sized to allow ~2MB images when base64 encoded.
+			logoUrl: z
+				.string()
+				.trim()
+				.max(4_000_000)
+				.optional()
+				.transform((v) => (v === "" ? undefined : v)),
 			currency: optionalString(10),
 			categories: z.array(z.string().trim().min(1).max(50)).max(20).optional(),
+			businessCategory: optionalString(120),
+			businessDescription: optionalString(500),
+			operatingHours: z.array(z.any()).optional(),
+			addressLine: optionalString(500),
 			
 			// Shared fields
 			email: emailSchema.optional().transform((v) => (v === "" ? undefined : v)),
