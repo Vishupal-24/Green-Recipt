@@ -254,7 +254,7 @@ userSchema.methods.updateEmailEngagement = async function (action) {
 userSchema.index({ isVerified: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ refreshToken: 1 });
-userSchema.index({ unsubscribeToken: 1 });
+// Note: unsubscribeToken index is auto-created by unique: true
 userSchema.index({ "emailPreferences.enabled": 1, "emailPreferences.billReminders": 1 });
 
 const User = mongoose.model("User", userSchema);

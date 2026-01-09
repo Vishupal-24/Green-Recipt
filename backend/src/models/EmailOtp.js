@@ -56,7 +56,7 @@ const emailOtpSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
+      // Note: index defined below with expireAfterSeconds
     },
     // Failed verification attempts (brute force protection)
     attempts: {
