@@ -7,7 +7,7 @@ import {
   Receipt, Sparkles, ArrowUpRight, ArrowDownRight, Smartphone, Banknote,
   ChevronRight, Clock, Zap, Target, CreditCard
 } from 'lucide-react';
-import { fetchCustomerReceipts, createReceipt, fetchCustomerAnalytics } from '../../services/api';
+import { fetchCustomerReceipts, createReceipt, fetchCustomerAnalytics, fetchUpcomingBills } from '../../services/api';
 import toast from 'react-hot-toast';
 import { getTodayIST, formatISTDateDisplay } from '../../utils/timezone';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -74,15 +74,17 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
   // 🟢 STATE
   const [receipts, setReceipts] = useState([]);
   const [analytics, setAnalytics] = useState(null);
+  const [upcomingBills, setUpcomingBills] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
     const load = async () => {
       try {
-        const [receiptsRes, analyticsRes] = await Promise.allSettled([
+        const [receiptsRes, analyticsRes, billsRes] = await Promise.allSettled([
           fetchCustomerReceipts(),
-          fetchCustomerAnalytics()
+          fetchCustomerAnalytics(),
+          fetchUpcomingBills(7) // Next 7 days
         ]);
         
         if (receiptsRes.status === 'fulfilled') {
@@ -99,6 +101,10 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
         
         if (analyticsRes.status === 'fulfilled' && mounted) {
           setAnalytics(analyticsRes.value.data);
+        }
+        
+        if (billsRes.status === 'fulfilled' && mounted) {
+          setUpcomingBills(billsRes.value.data?.bills || []);
         }
       } catch (error) {
         const cached = localStorage.getItem('customerReceipts');
@@ -406,6 +412,108 @@ const CustomerHome = ({ onNavigate, onScanTrigger }) => {
           isDark={isDark}
         />
       </div>
+
+      {/* ========== UPCOMING BILLS WIDGET ========== */}
+      {upcomingBills.length > 0 && (
+        <div className={`p-4 md:p-5 rounded-xl md:rounded-2xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-100'} shadow-sm`}>
+          <div className="flex justify-between items-center mb-3 md:mb-4">
+            <div className="flex items-center gap-2">
+              <div className={`p-2 rounded-lg ${isDark ? 'bg-amber-900/30' : 'bg-amber-50'}`}>
+                <CreditCard size={16} className={`${isDark ? 'text-amber-400' : 'text-amber-600'}`} />
+              </div>
+              <h3 className={`font-bold text-sm md:text-base ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                {t('bills.upcomingBills', 'Upcoming Bills')}
+              </h3>
+            </div>
+            <button 
+              onClick={() => onNavigate('bills')} 
+              className="text-[10px] md:text-xs font-bold text-emerald-500 hover:text-emerald-400 flex items-center gap-0.5 md:gap-1 transition-colors"
+            >
+              {t('common.viewAll')} <ChevronRight size={12} className="md:w-[14px] md:h-[14px]" />
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            {upcomingBills.slice(0, 3).map((bill) => {
+              const dueDate = new Date(bill.nextDue);
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+              const isOverdue = daysUntilDue < 0;
+              const isDueToday = daysUntilDue === 0;
+              const isDueSoon = daysUntilDue <= 3 && daysUntilDue > 0;
+              
+              return (
+                <div 
+                  key={bill._id}
+                  onClick={() => onNavigate('bills')}
+                  className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all hover:scale-[1.01] ${
+                    isDark 
+                      ? isOverdue ? 'bg-red-900/20 border border-red-800/50' 
+                        : isDueToday ? 'bg-amber-900/20 border border-amber-800/50'
+                        : isDueSoon ? 'bg-orange-900/20 border border-orange-800/50'
+                        : 'bg-slate-700/50' 
+                      : isOverdue ? 'bg-red-50 border border-red-100' 
+                        : isDueToday ? 'bg-amber-50 border border-amber-100'
+                        : isDueSoon ? 'bg-orange-50 border border-orange-100'
+                        : 'bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm ${
+                      isDark ? 'bg-slate-600' : 'bg-white border border-slate-200'
+                    }`}>
+                      {bill.category === 'utilities' ? '💡' : 
+                       bill.category === 'internet' ? '📶' :
+                       bill.category === 'phone' ? '📱' :
+                       bill.category === 'subscriptions' ? '📺' :
+                       bill.category === 'insurance' ? '🛡️' :
+                       bill.category === 'rent' ? '🏠' :
+                       bill.category === 'loan' ? '🏦' :
+                       bill.category === 'credit_card' ? '💳' : '📄'}
+                    </div>
+                    <div>
+                      <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                        {bill.name}
+                      </p>
+                      <p className={`text-[10px] ${
+                        isOverdue ? 'text-red-500 font-bold' :
+                        isDueToday ? 'text-amber-500 font-bold' :
+                        isDueSoon ? 'text-orange-500' :
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      }`}>
+                        {isOverdue ? t('bills.overdue', 'Overdue!') :
+                         isDueToday ? t('bills.dueToday', 'Due today') :
+                         daysUntilDue === 1 ? t('bills.dueTomorrow', 'Due tomorrow') :
+                         t('bills.dueInDays', { days: daysUntilDue })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                      ₹{bill.amount.toLocaleString('en-IN')}
+                    </p>
+                    <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {upcomingBills.length > 3 && (
+            <button 
+              onClick={() => onNavigate('bills')}
+              className={`w-full mt-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+                isDark ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'
+              }`}
+            >
+              +{upcomingBills.length - 3} {t('bills.moreBills', 'more bills')}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ========== RECENT ACTIVITY ========== */}
       <div>

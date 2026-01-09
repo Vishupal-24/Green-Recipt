@@ -325,8 +325,14 @@
       "paused": "Paused",
       "paid": "Paid",
       "overdue": "Overdue",
-      "dueSoon": "Due Soon"
+      "dueSoon": "Due Soon",
+      "dueToday": "Due today",
+      "dueTomorrow": "Due tomorrow",
+      "dueInDays": "Due in {{days}} days"
     },
+    
+    "upcomingBills": "Upcoming Bills",
+    "moreBills": "more bills",
     
     "messages": {
       "billAdded": "Bill added successfully",
