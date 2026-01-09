@@ -2012,6 +2012,21 @@ const MerchantCalendar = () => {
                    );
                  })}
                </div>
+               
+               {/* Show discount details if available */}
+               {viewingReceipt.discount > 0 && (
+                 <div className={`space-y-2 mb-4 pb-4 border-b border-dashed ${isDark ? 'border-dark-border' : 'border-slate-200'}`}>
+                   <div className="flex justify-between text-sm items-center">
+                     <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Subtotal</span>
+                     <span className={`font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>₹{viewingReceipt.subtotal || (viewingReceipt.total ?? viewingReceipt.amount) + viewingReceipt.discount}</span>
+                   </div>
+                   <div className="flex justify-between text-sm items-center">
+                     <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Discount</span>
+                     <span className="font-bold text-red-500">- ₹{viewingReceipt.discount}</span>
+                   </div>
+                 </div>
+               )}
+               
                <div className={`border-t-2 border-dashed pt-4 flex justify-between items-center mb-6 ${isDark ? 'border-dark-border' : 'border-slate-100'}`}>
                  <span className={`font-black text-xs uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Received</span>
                  <span className={`text-3xl font-black ${isDark ? 'text-white' : 'text-slate-900'}`}>₹{viewingReceipt.total ?? viewingReceipt.amount}</span>

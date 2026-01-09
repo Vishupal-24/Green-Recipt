@@ -39,6 +39,18 @@ const receiptSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    subtotal: {
+      type: Number,
+      required: false,
+      min: 0,
+      default: 0,
+    },
+    discount: {
+      type: Number,
+      required: false,
+      min: 0,
+      default: 0,
+    },
     source: {
       type: String,
       enum: ["qr", "upload", "manual"],

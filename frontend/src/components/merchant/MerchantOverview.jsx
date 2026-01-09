@@ -770,6 +770,11 @@ const MerchantOverview = () => {
                     <p className={`text-[10px] capitalize ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                       {bill.paymentMethod || "cash"}
                     </p>
+                    {Number(bill.discount || 0) > 0 && (
+                      <p className={`text-[10px] font-bold ${isDark ? 'text-red-400' : 'text-red-500'}`}>
+                        Saved ₹{bill.discount}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))
@@ -860,17 +865,33 @@ const MerchantOverview = () => {
                   viewingReceipt.items.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm">
                       <span className={isDark ? 'text-slate-300' : 'text-slate-600'}>
-                        {item.q || item.qty || 1} x {item.n || item.name}
+                        {item.qty || item.quantity || item.q || 1} x {item.n || item.name}
                       </span>
                       <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                        ₹{(item.p || item.price) * (item.q || item.qty || 1)}
+                        ₹{(item.price || item.unitPrice || item.p || 0) * (item.qty || item.quantity || item.q || 1)}
                       </span>
                     </div>
                   ))}
               </div>
+              {Number(viewingReceipt.discount || 0) > 0 && (
+                <div className={`border-t pt-4 mt-4 space-y-2 ${isDark ? 'border-dark-border' : 'border-slate-200'}`}>
+                  <div className="flex justify-between text-sm">
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Subtotal</span>
+                    <span className={`font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                      ₹{viewingReceipt.subtotal || (viewingReceipt.total ?? viewingReceipt.amount ?? 0) + (viewingReceipt.discount || 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Discount</span>
+                    <span className={`font-bold ${isDark ? 'text-red-400' : 'text-red-500'}`}>
+                      - ₹{viewingReceipt.discount}
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className={`border-t pt-4 flex justify-between font-bold ${isDark ? 'border-dark-border text-white' : 'text-slate-800'}`}>
-                <span>TOTAL</span>
-                <span>₹{viewingReceipt.total || viewingReceipt.amount}</span>
+                <span>Total Payable</span>
+                <span>₹{viewingReceipt.total ?? viewingReceipt.amount}</span>
               </div>
               <div className="flex justify-end mt-4">
                 <button

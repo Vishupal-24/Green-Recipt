@@ -42,6 +42,8 @@ const mapReceiptToClient = (receipt) => {
     customerName: receipt.customerSnapshot?.name || null,
     customerEmail: receipt.customerSnapshot?.email || null,
     amount: receipt.total,
+    subtotal: receipt.subtotal || 0,
+    discount: receipt.discount || 0,
     transactionDate: receipt.transactionDate ? new Date(receipt.transactionDate).toISOString() : null,
     date: isoDate,
     time,
@@ -81,6 +83,8 @@ export const createReceipt = async (req, res) => {
       footer = "",
       category = "general",
       total: providedTotal,
+      subtotal: providedSubtotal,
+      discount: providedDiscount = 0,
       status = "completed",
       receiptId = null,
       // For customer uploads without merchant
@@ -95,16 +99,35 @@ export const createReceipt = async (req, res) => {
     const items = normalizeItems(rawItems);
     const computedTotal = computeTotal(items);
 
+    // Handle discount calculations
+    const discount = typeof providedDiscount === "number" ? Math.max(0, providedDiscount) : 0;
+    const subtotal = typeof providedSubtotal === "number" ? providedSubtotal : computedTotal;
+    
+    // Final total should be subtotal minus discount
+    let finalTotal;
+    if (typeof providedTotal === "number") {
+      finalTotal = providedTotal;
+    } else if (subtotal > 0 && discount > 0) {
+      finalTotal = Math.max(0, subtotal - discount);
+    } else {
+      finalTotal = computedTotal;
+    }
+
     // For uploads without items, use provided total
     // For QR scans, also allow provided total if items are empty or total is explicitly provided
-    const finalTotal = (source === "upload" || source === "qr") && typeof providedTotal === "number" 
-      ? providedTotal 
-      : computedTotal || providedTotal || 0;
+    if ((source === "upload" || source === "qr") && typeof providedTotal === "number") {
+      finalTotal = providedTotal;
+    }
 
     // Only validate total vs items for manual entries (not QR or upload)
     // QR codes may have pre-calculated totals that include taxes/discounts not in items
-    if (source === "manual" && typeof providedTotal === "number" && items.length > 0 && Math.abs(providedTotal - computedTotal) > 0.01) {
-      return res.status(400).json({ message: "Total does not match items sum" });
+    if (source === "manual" && typeof providedTotal === "number" && items.length > 0) {
+      const expectedTotal = Math.max(0, (typeof providedSubtotal === "number" ? providedSubtotal : computedTotal) - discount);
+      if (Math.abs(providedTotal - expectedTotal) > 0.01) {
+        return res.status(400).json({
+          message: "Total does not match items sum (after discount)",
+        });
+      }
     }
 
     let merchant = null;
@@ -191,6 +214,8 @@ export const createReceipt = async (req, res) => {
       userId,
       items,
       total: finalTotal,
+      subtotal,
+      discount,
       source,
       paymentMethod,
       status,

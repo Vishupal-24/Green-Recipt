@@ -548,6 +548,22 @@ const ReceiptCard = ({ data, onDelete, isDark: propIsDark }) => {
                 style={{ background: isDark ? `linear-gradient(135deg, ${brandColor}20 0%, ${brandColor}10 100%)` : `linear-gradient(135deg, ${brandColor}10 0%, ${brandColor}05 100%)` }}
               >
                 <div className="absolute top-0 left-0 w-1 h-full rounded-l-xl" style={{ backgroundColor: brandColor }} />
+                
+                {/* Show subtotal and discount if available */}
+                {data.discount > 0 && (
+                  <div className="space-y-1 mb-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Subtotal</span>
+                      <span className={`font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>₹{data.subtotal || data.amount + data.discount}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Discount</span>
+                      <span className="font-bold text-red-500">- ₹{data.discount}</span>
+                    </div>
+                    <div className={`border-t pt-1 ${isDark ? 'border-slate-600' : 'border-slate-300'}`}></div>
+                  </div>
+                )}
+                
                 <div className="flex justify-between items-center mb-2">
                   <span className={`text-sm font-bold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Amount</span>
                   <span className="text-3xl font-bold" style={{ color: brandColor }}>₹{data.amount}</span>
