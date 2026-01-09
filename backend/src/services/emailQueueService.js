@@ -35,17 +35,41 @@ const CONFIG = {
 // Initialize SendGrid
 let isInitialized = false;
 
-const initializeSendGrid = () => {
-  if (isInitialized) return true;
-  
+const getSendGridFromEmail = () => {
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL?.trim();
+  return fromEmail || null;
+};
+
+const formatSendGridError = (error) => {
+  const statusCode = error?.code || error?.response?.statusCode;
+  const responseBody = error?.response?.body;
+  const responseErrors = responseBody?.errors;
+
+  return {
+    statusCode,
+    message: error?.message,
+    errors: Array.isArray(responseErrors) ? responseErrors : undefined,
+  };
+};
+
+const ensureSendGridReady = () => {
   if (!process.env.SENDGRID_API_KEY) {
     console.warn("[EmailQueue] ⚠️ SENDGRID_API_KEY not configured");
-    return false;
+    return { ok: false, error: "SENDGRID_API_KEY_NOT_CONFIGURED" };
   }
-  
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  isInitialized = true;
-  return true;
+
+  const fromEmail = getSendGridFromEmail();
+  if (!fromEmail) {
+    console.error("[EmailQueue] ❌ SENDGRID_FROM_EMAIL not configured");
+    return { ok: false, error: "SENDGRID_FROM_EMAIL_NOT_CONFIGURED" };
+  }
+
+  if (!isInitialized) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    isInitialized = true;
+  }
+
+  return { ok: true, fromEmail };
 };
 
 // ===========================================
@@ -157,21 +181,16 @@ export const queueEmail = async ({
  * @returns {Promise<{sent: boolean, error?: string}>}
  */
 export const sendEmailNow = async ({ to, subject, html, emailType = "system" }) => {
-  if (!initializeSendGrid()) {
-    console.log(`[EmailQueue] SendGrid not configured, skipping email to: ${to}`);
-    return { sent: false, error: "SENDGRID_NOT_CONFIGURED" };
-  }
-
-  const fromEmail = process.env.SENDGRID_FROM_EMAIL;
-  if (!fromEmail) {
-    console.error("[EmailQueue] SENDGRID_FROM_EMAIL not configured");
-    return { sent: false, error: "FROM_EMAIL_NOT_CONFIGURED" };
+  const sg = ensureSendGridReady();
+  if (!sg.ok) {
+    console.log(`[EmailQueue] SendGrid not ready (${sg.error}), skipping email to: ${to}`);
+    return { sent: false, error: sg.error };
   }
 
   try {
     const [response] = await sgMail.send({
       to,
-      from: { email: fromEmail, name: "GreenReceipt" },
+      from: { email: sg.fromEmail, name: "GreenReceipt" },
       subject,
       html,
     });
@@ -183,8 +202,8 @@ export const sendEmailNow = async ({ to, subject, html, emailType = "system" }) 
       statusCode: response.statusCode,
     };
   } catch (error) {
-    console.error(`[EmailQueue] ❌ Send failed to ${to}:`, error.message);
-    return { sent: false, error: error.message };
+    console.error(`[EmailQueue] ❌ Send failed to ${to}:`, formatSendGridError(error));
+    return { sent: false, error: error.message, details: formatSendGridError(error) };
   }
 };
 
@@ -201,9 +220,10 @@ let isProcessing = false;
  */
 export const processEmailQueue = async () => {
   if (!CONFIG.ENABLED || isProcessing) return;
-  
-  if (!initializeSendGrid()) {
-    return { processed: 0, error: "SENDGRID_NOT_CONFIGURED" };
+
+  const sg = ensureSendGridReady();
+  if (!sg.ok) {
+    return { processed: 0, error: sg.error };
   }
 
   isProcessing = true;
@@ -232,10 +252,9 @@ export const processEmailQueue = async () => {
         }
 
         // Send the email
-        const fromEmail = process.env.SENDGRID_FROM_EMAIL;
         const [response] = await sgMail.send({
           to: emailLog.recipientEmail,
-          from: { email: fromEmail, name: "GreenReceipt" },
+          from: { email: sg.fromEmail, name: "GreenReceipt" },
           subject: emailLog.subject,
           html: emailLog.htmlContent,
         });
@@ -253,7 +272,10 @@ export const processEmailQueue = async () => {
         // Mark as failed (will retry if attempts < max)
         await EmailLog.markAsFailed(emailLog._id, error);
         failed++;
-        console.error(`[EmailQueue] ❌ Failed ${emailLog.recipientEmail}:`, error.message);
+        console.error(
+          `[EmailQueue] ❌ Failed ${emailLog.recipientEmail}:`,
+          formatSendGridError(error)
+        );
       }
     }
 

@@ -352,6 +352,14 @@ emailLogSchema.statics.markAsFailed = async function (emailId, error) {
   const log = await this.findById(emailId);
   if (!log) return null;
 
+  const sendGridResponse = error?.response
+    ? {
+        statusCode: error?.code || error?.response?.statusCode,
+        headers: error?.response?.headers,
+        body: error?.response?.body,
+      }
+    : undefined;
+
   // Calculate next retry with exponential backoff
   // Retry delays: 1min, 5min, 15min
   const retryDelays = [1, 5, 15];
@@ -369,6 +377,7 @@ emailLogSchema.statics.markAsFailed = async function (emailId, error) {
         errorMessage: error.message,
         errorCode: error.code || error.response?.body?.errors?.[0]?.message,
         errorStack: error.stack,
+        ...(sendGridResponse ? { sendGridResponse } : {}),
         nextRetryAt: isFinalAttempt ? null : nextRetryAt,
       },
     },
