@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import emailOtpRoutes from "./routes/emailOtpRoutes.js";
+import emailPreferenceRoutes from "./routes/emailPreferenceRoutes.js";
 import receiptRoutes from "./routes/receiptRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import merchantRoutes from "./routes/merchantRoutes.js";
@@ -78,6 +79,7 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", emailOtpRoutes); // Email OTP routes (mounted under /api/auth)
+app.use("/api", emailPreferenceRoutes); // Email preference routes
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/merchant", merchantRoutes);

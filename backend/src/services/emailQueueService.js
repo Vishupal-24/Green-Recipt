@@ -69,9 +69,17 @@ const EMAIL_TEMPLATES = {
     },
     getHtml: (data) => generateBillReminderHtml(data),
   },
+  bill_due_today: {
+    getSubject: ({ billName }) => `⏰ ${billName} is due today!`,
+    getHtml: (data) => generateBillReminderHtml({ ...data, daysUntilDue: 0 }),
+  },
   welcome: {
     getSubject: () => "Welcome to GreenReceipt! 🌱",
     getHtml: ({ name }) => generateWelcomeHtml(name),
+  },
+  password_changed: {
+    getSubject: () => "Your GreenReceipt password was changed 🔒",
+    getHtml: ({ name }) => generatePasswordChangedHtml(name),
   },
 };
 
@@ -557,6 +565,81 @@ function generateWelcomeHtml(name) {
         </p>
         <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;">
           Secure • Private • Paperless 🌿
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+function generatePasswordChangedHtml(name) {
+  const clientUrl = process.env.CLIENT_URL || "https://green-recipt.vercel.app";
+  const now = new Date();
+  const timestamp = now.toLocaleString("en-IN", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+  
+  return `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 520px; margin: 0 auto; background: #ffffff;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">
+          🔒 GreenReceipt
+        </h1>
+        <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">
+          Security Alert
+        </p>
+      </div>
+      
+      <!-- Content -->
+      <div style="padding: 30px; background: #ffffff;">
+        ${name ? `<p style="color: #1e293b; font-size: 16px; margin: 0 0 15px 0;">Hi ${name},</p>` : ''}
+        
+        <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
+          Your GreenReceipt password was successfully changed.
+        </p>
+        
+        <!-- Info Box -->
+        <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+          <p style="color: #166534; font-size: 14px; margin: 0; line-height: 1.6;">
+            <strong>When:</strong> ${timestamp}
+          </p>
+        </div>
+        
+        <!-- Security Warning -->
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 0 8px 8px 0; margin: 20px 0;">
+          <p style="color: #92400e; font-size: 14px; margin: 0; line-height: 1.6;">
+            <strong>⚠️ Didn't make this change?</strong><br/>
+            If you didn't change your password, your account may be compromised. 
+            Please secure your account immediately by resetting your password.
+          </p>
+        </div>
+        
+        <!-- CTA -->
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${clientUrl}/forgot-password" 
+             style="display: inline-block; background: #ef4444; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+            Secure My Account
+          </a>
+        </div>
+        
+        <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 20px 0 0 0; text-align: center;">
+          If you made this change, no action is needed. You can safely ignore this email.
+        </p>
+      </div>
+      
+      <!-- Footer -->
+      <div style="background: #f8fafc; padding: 20px 30px; text-align: center; border-radius: 0 0 12px 12px; border-top: 1px solid #e2e8f0;">
+        <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+          This is an automated security notification from GreenReceipt.
+        </p>
+        <p style="color: #94a3b8; font-size: 12px; margin: 8px 0 0 0;">
+          © ${new Date().getFullYear()} GreenReceipt. All rights reserved.
         </p>
       </div>
     </div>
