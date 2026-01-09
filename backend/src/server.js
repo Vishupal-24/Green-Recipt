@@ -12,6 +12,9 @@ import authRoutes from "./routes/authRoutes.js";
 import receiptRoutes from "./routes/receiptRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import merchantRoutes from "./routes/merchantRoutes.js";
+import billRoutes from "./routes/billRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import { startScheduler, stopScheduler } from "./services/reminderScheduler.js";
 
 const app = express();
 
@@ -74,6 +77,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/merchant", merchantRoutes);
+app.use("/api/bills", billRoutes);
+app.use("/api/notifications", notificationRoutes);
+
+// Start reminder scheduler after routes are set up
+startScheduler();
 
 // Error handlers
 app.use((req, res) => {
@@ -96,6 +104,7 @@ const server = app.listen(PORT, () => {
 
 process.on("SIGTERM", () => {
   console.log("SIGTERM received. Shutting down gracefully...");
+  stopScheduler();
   server.close(() => {
     console.log("Process terminated");
     process.exit(0);

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Home, FileText, Calendar, PieChart, User, Receipt, Bell, Leaf, Sparkles, TreePine, Droplets } from 'lucide-react';
+import { Home, FileText, Calendar, PieChart, User, Receipt, Bell, Leaf, Sparkles, TreePine, Droplets, CreditCard } from 'lucide-react';
 import { formatISTDate, getTodayIST } from '../../utils/timezone';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTranslation } from 'react-i18next';
@@ -43,14 +43,21 @@ const CustomerSidebar = ({ activeTab, onNavigate, receipts = [] }) => {
   const navItems = [
     { id: 'home', icon: Home, label: t('nav.home') },
     { id: 'receipts', icon: FileText, label: t('nav.receipts') },
+    { id: 'bills', icon: CreditCard, label: t('nav.bills', 'Bills') },
     { id: 'calendar', icon: Calendar, label: t('nav.history') },
     { id: 'insights', icon: PieChart, label: t('nav.insights') },
     { id: 'notifications', icon: Bell, label: t('nav.alerts'), hasBadge: true },
     { id: 'profile', icon: User, label: t('nav.profile') },
   ];
 
-  // Mobile nav items (exclude notifications - shown in header)
-  const mobileNavItems = navItems.filter(item => item.id !== 'notifications');
+  // Mobile nav items (show main ones only for space)
+  const mobileNavItems = [
+    { id: 'home', icon: Home, label: t('nav.home') },
+    { id: 'receipts', icon: FileText, label: t('nav.receipts') },
+    { id: 'bills', icon: CreditCard, label: t('nav.bills', 'Bills') },
+    { id: 'insights', icon: PieChart, label: t('nav.insights') },
+    { id: 'profile', icon: User, label: t('nav.profile') },
+  ];
 
   return (
     <>

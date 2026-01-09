@@ -422,4 +422,129 @@ export const toggleItemAvailability = (id, isAvailable) =>
   api.patch(`/merchant/items/${id}/availability`, { isAvailable });
 export const reorderItems = (itemIds) => api.patch("/merchant/items/reorder", { itemIds });
 
+// ==========================================
+// RECURRING BILL APIs
+// ==========================================
+
+/**
+ * Create a new recurring bill
+ * @param {Object} payload - Bill data (name, amount, billCycle, dueDay, reminderOffsets, etc.)
+ */
+export const createBill = (payload) => api.post("/bills", payload);
+
+/**
+ * Get all recurring bills for the user
+ * @param {Object} params - Query params (status, category, page, limit)
+ */
+export const fetchBills = (params = {}) => {
+  const queryParams = new URLSearchParams();
+  if (params.status) queryParams.append('status', params.status);
+  if (params.category) queryParams.append('category', params.category);
+  if (params.page) queryParams.append('page', params.page);
+  if (params.limit) queryParams.append('limit', params.limit);
+  const queryString = queryParams.toString();
+  return api.get(`/bills${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * Get a single bill by ID
+ * @param {string} id - Bill ID
+ */
+export const fetchBillById = (id) => api.get(`/bills/${id}`);
+
+/**
+ * Update a recurring bill
+ * @param {string} id - Bill ID
+ * @param {Object} payload - Fields to update
+ */
+export const updateBill = (id, payload) => api.patch(`/bills/${id}`, payload);
+
+/**
+ * Delete a recurring bill
+ * @param {string} id - Bill ID
+ * @param {boolean} permanent - If true, permanently delete
+ */
+export const deleteBill = (id, permanent = false) => 
+  api.delete(`/bills/${id}${permanent ? '?permanent=true' : ''}`);
+
+/**
+ * Toggle bill status (pause/resume)
+ * @param {string} id - Bill ID
+ * @param {string} status - 'active' or 'paused'
+ */
+export const toggleBillStatus = (id, status) => 
+  api.patch(`/bills/${id}/status`, { status });
+
+/**
+ * Mark a bill as paid for the current cycle
+ * @param {string} id - Bill ID
+ */
+export const markBillPaid = (id) => api.post(`/bills/${id}/mark-paid`);
+
+/**
+ * Get upcoming bills summary (for dashboard widget)
+ * @param {number} days - Number of days to look ahead (default: 7)
+ */
+export const fetchUpcomingBills = (days = 7) => 
+  api.get(`/bills/upcoming?days=${days}`);
+
+/**
+ * Get bill categories with counts
+ */
+export const fetchBillCategories = () => api.get("/bills/categories");
+
+// ==========================================
+// NOTIFICATION APIs
+// ==========================================
+
+/**
+ * Get notifications for the user
+ * @param {Object} params - Query params (page, limit, type, unreadOnly)
+ */
+export const fetchNotifications = (params = {}) => {
+  const queryParams = new URLSearchParams();
+  if (params.page) queryParams.append('page', params.page);
+  if (params.limit) queryParams.append('limit', params.limit);
+  if (params.type) queryParams.append('type', params.type);
+  if (params.unreadOnly) queryParams.append('unreadOnly', params.unreadOnly);
+  const queryString = queryParams.toString();
+  return api.get(`/notifications${queryString ? `?${queryString}` : ''}`);
+};
+
+/**
+ * Get unread notification count
+ */
+export const fetchNotificationCount = () => api.get("/notifications/count");
+
+/**
+ * Mark a single notification as read
+ * @param {string} id - Notification ID
+ */
+export const markNotificationRead = (id) => api.patch(`/notifications/${id}/read`);
+
+/**
+ * Mark all notifications as read
+ * @param {string} type - Optional: only mark specific type as read
+ */
+export const markAllNotificationsRead = (type = null) => 
+  api.post("/notifications/mark-all-read", type ? { type } : {});
+
+/**
+ * Dismiss a notification
+ * @param {string} id - Notification ID
+ */
+export const dismissNotification = (id) => api.delete(`/notifications/${id}`);
+
+/**
+ * Dismiss all notifications
+ * @param {string} type - Optional: only dismiss specific type
+ */
+export const dismissAllNotifications = (type = null) => 
+  api.post("/notifications/dismiss-all", type ? { type } : {});
+
+/**
+ * Get notification preferences
+ */
+export const fetchNotificationPreferences = () => api.get("/notifications/preferences");
+
 export default api;
