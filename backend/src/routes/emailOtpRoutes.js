@@ -25,6 +25,7 @@ import { validate } from "../middleware/validate.js";
 import {
   sendEmailOtp,
   verifyEmailOtp,
+  verifyExistingEmailOtp,
   resendEmailOtp,
   getOtpStatus,
   sendPasswordResetOtp,
@@ -34,6 +35,7 @@ import {
 import {
   sendEmailOtpSchema,
   verifyEmailOtpSchema,
+  verifyExistingEmailOtpSchema,
   resendEmailOtpSchema,
   otpStatusSchema,
   sendPasswordResetOtpSchema,
@@ -140,6 +142,19 @@ router.post(
   otpVerifyLimiter,
   validate(verifyEmailOtpSchema),
   verifyEmailOtp
+);
+
+/**
+ * POST /api/auth/email/verify-existing-otp
+ * Verify OTP and mark an already-created account as verified.
+ *
+ * Body: { email: string, otp: string (6 digits), role?: "customer" | "merchant" }
+ */
+router.post(
+  "/email/verify-existing-otp",
+  otpVerifyLimiter,
+  validate(verifyExistingEmailOtpSchema),
+  verifyExistingEmailOtp
 );
 
 /**

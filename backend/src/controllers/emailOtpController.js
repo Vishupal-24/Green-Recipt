@@ -245,6 +245,71 @@ export const verifyEmailOtp = async (req, res) => {
 };
 
 // ===========================================
+// VERIFY EXISTING ACCOUNT OTP ENDPOINT
+// ===========================================
+
+/**
+ * POST /auth/email/verify-existing-otp
+ *
+ * Verify OTP code for an already-created account (e.g., user attempted login
+ * but is not verified yet). This does NOT require password/name/shopName.
+ *
+ * Request body:
+ * - email: string (required)
+ * - otp: string (required, 6 digits)
+ * - role: "customer" | "merchant" (optional)
+ */
+export const verifyExistingEmailOtp = async (req, res) => {
+  try {
+    const { email, otp, role = "customer" } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Verify the OTP
+    const verifyResult = await verifyOtp({
+      email: normalizedEmail,
+      otp,
+      purpose: OTP_CONFIG.PURPOSES.EMAIL_VERIFICATION,
+    });
+
+    if (!verifyResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: verifyResult.message,
+        code: verifyResult.error,
+        remainingAttempts: verifyResult.remainingAttempts,
+      });
+    }
+
+    // 2. Mark existing account as verified
+    const Model = role === "merchant" ? Merchant : User;
+    const account = await Model.findOne({ email: normalizedEmail });
+
+    if (!account) {
+      return res.status(400).json({
+        success: false,
+        message: "Account not found. Please sign up first.",
+        code: "ACCOUNT_NOT_FOUND",
+      });
+    }
+
+    account.isEmailVerified = true;
+    account.isVerified = true;
+    await account.save();
+
+    res.json({
+      success: true,
+      message: "Email verified successfully. Please log in.",
+      email: normalizedEmail,
+      role,
+      redirect: role === "merchant" ? "/merchant-login" : "/customer-login",
+    });
+  } catch (error) {
+    console.error("[EmailOtpController] verifyExistingEmailOtp error:", error);
+    genericError(res);
+  }
+};
+
+// ===========================================
 // RESEND OTP ENDPOINT
 // ===========================================
 

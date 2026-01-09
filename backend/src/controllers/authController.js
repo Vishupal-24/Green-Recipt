@@ -5,6 +5,7 @@ import User from "../models/User.js";
 import Merchant from "../models/Merchant.js";
 import { sendWelcomeEmail, sendMerchantWelcomeEmail } from "../utils/sendEmail.js";
 import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+import { OTP_CONFIG as EMAIL_OTP_CONFIG, sendOtp as sendEmailOtpViaQueue } from "../services/otpService.js";
 import {
   generateOtp,
   hashOtp,
@@ -546,22 +547,30 @@ export const registerCustomer = async (req, res) => {
       return res.status(400).json({ message: "Email already in use" });
     }
 
-    const user = new User({ name, email, password, isVerified: true });
-    // Skip OTP - auto-verify
-    await user.save();
-
-    // Send welcome email (async, don't await - don't block signup)
-    sendWelcomeEmail(email, name).catch((err) => {
-      console.error("[Auth] Welcome email failed:", err.message);
+    // OTP-based signup: do NOT create the account here.
+    // We only send an OTP; account is created after OTP verification.
+    const result = await sendEmailOtpViaQueue({
+      email,
+      purpose: EMAIL_OTP_CONFIG.PURPOSES.EMAIL_VERIFICATION,
+      role: "customer",
+      requestIp: req.ip || req.headers["x-forwarded-for"],
+      userAgent: req.headers["user-agent"],
     });
 
-    res.status(201).json({
-      message: "Registration successful. Your account is verified. Please login.",
-      email: user.email,
-      role: user.role,
-      autoVerified: true,
-      redirect: "/customer-login",
-      next: { type: "redirect", path: "/customer-login" },
+    if (!result.success) {
+      return res.status(result.error === "COOLDOWN" || result.error === "HOURLY_LIMIT" ? 429 : 400).json({
+        message: result.message,
+        code: result.error,
+        waitSeconds: result.waitSeconds,
+      });
+    }
+
+    res.status(202).json({
+      message: "Verification code sent. Please verify to complete signup.",
+      email,
+      role: "customer",
+      expiresIn: result.expiresIn,
+      next: { type: "verify", path: "/verify-customer" },
     });
   } catch (error) {
     console.error("registerCustomer error", error);
@@ -592,22 +601,30 @@ export const registerMerchant = async (req, res) => {
       return res.status(400).json({ message: "Email already in use" });
     }
 
-    const merchant = new Merchant({ shopName, email, password, isVerified: true });
-    // Skip OTP - auto-verify
-    await merchant.save();
-
-    // Send welcome email (async, don't await - don't block signup)
-    sendMerchantWelcomeEmail(email, shopName).catch((err) => {
-      console.error("[Auth] Merchant welcome email failed:", err.message);
+    // OTP-based signup: do NOT create the account here.
+    // We only send an OTP; account is created after OTP verification.
+    const result = await sendEmailOtpViaQueue({
+      email,
+      purpose: EMAIL_OTP_CONFIG.PURPOSES.EMAIL_VERIFICATION,
+      role: "merchant",
+      requestIp: req.ip || req.headers["x-forwarded-for"],
+      userAgent: req.headers["user-agent"],
     });
 
-    res.status(201).json({
-      message: "Registration successful. Your account is verified. Please login.",
-      email: merchant.email,
-      role: merchant.role,
-      autoVerified: true,
-      redirect: "/merchant-login",
-      next: { type: "redirect", path: "/merchant-login" },
+    if (!result.success) {
+      return res.status(result.error === "COOLDOWN" || result.error === "HOURLY_LIMIT" ? 429 : 400).json({
+        message: result.message,
+        code: result.error,
+        waitSeconds: result.waitSeconds,
+      });
+    }
+
+    res.status(202).json({
+      message: "Verification code sent. Please verify to complete signup.",
+      email,
+      role: "merchant",
+      expiresIn: result.expiresIn,
+      next: { type: "verify", path: "/verify-merchant" },
     });
   } catch (error) {
     console.error("registerMerchant error", error);
@@ -654,6 +671,19 @@ export const login = async (req, res) => {
     const isMatch = await account.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Enforce email verification before allowing login.
+    // Legacy accounts may have isVerified=true (old email-link/auto-verify) but isEmailVerified=false.
+    // Only block if BOTH are false.
+    if (account.isEmailVerified === false && account.isVerified === false) {
+      return res.status(403).json({
+        message: "Please verify your email before logging in.",
+        code: "EMAIL_NOT_VERIFIED",
+        email: normalizedEmail,
+        role: account.role,
+        next: { type: "verify", path: account.role === "merchant" ? "/verify-merchant" : "/verify-customer" },
+      });
     }
 
     // Generate tokens

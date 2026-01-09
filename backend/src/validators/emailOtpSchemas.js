@@ -86,6 +86,18 @@ export const verifyEmailOtpSchema = {
 };
 
 // ===========================================
+// VERIFY EXISTING ACCOUNT EMAIL OTP SCHEMA
+// ===========================================
+
+export const verifyExistingEmailOtpSchema = {
+  body: z.object({
+    email: emailSchema,
+    otp: otpSchema,
+    role: roleSchema,
+  }),
+};
+
+// ===========================================
 // RESEND EMAIL OTP SCHEMA
 // ===========================================
 
@@ -175,6 +187,7 @@ export const unsubscribeSchema = {
 export default {
   sendEmailOtpSchema,
   verifyEmailOtpSchema,
+  verifyExistingEmailOtpSchema,
   resendEmailOtpSchema,
   otpStatusSchema,
   sendPasswordResetOtpSchema,

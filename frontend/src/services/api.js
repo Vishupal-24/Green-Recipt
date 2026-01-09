@@ -351,6 +351,13 @@ export const verifyOtpCode = (payload) => api.post("/auth/otp/verify", payload);
 export const forgotPassword = (payload) => api.post("/auth/forgot-password", payload);
 export const resetPassword = (payload) => api.post("/auth/reset-password", payload);
 
+// ==========================================
+// NEW: Email OTP (Signup + Password reset)
+// ==========================================
+export const verifySignupEmailOtp = (payload) => api.post("/auth/email/verify-otp", payload);
+export const resendSignupEmailOtp = (payload) => api.post("/auth/email/resend-otp", payload);
+export const verifyExistingEmailOtp = (payload) => api.post("/auth/email/verify-existing-otp", payload);
+
 // Session management APIs
 export const refreshToken = () => api.post("/auth/refresh"); // Refresh token sent via cookie
 export const logoutUser = () => api.post("/auth/logout"); // Server clears the cookie

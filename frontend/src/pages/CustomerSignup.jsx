@@ -247,12 +247,13 @@ const CustomerSignup = () => {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
-      navigate("/signup-success", { 
-        state: { 
-          userType: "customer",
+      navigate("/verify-customer", {
+        state: {
           email: formData.email,
-          name: formData.name 
-        } 
+          name: formData.name,
+          password: formData.password,
+          role: "customer",
+        },
       });
     } catch (error) {
       const message = error.response?.data?.message || "Signup failed";

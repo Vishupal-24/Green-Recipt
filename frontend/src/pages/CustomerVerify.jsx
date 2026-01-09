@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { requestOtp, verifyOtpCode } from '../services/api.js';
+import { resendSignupEmailOtp, verifyExistingEmailOtp, verifySignupEmailOtp } from '../services/api.js';
 import useForceLightMode from "../hooks/useForceLightMode";
 
 const CustomerVerify = () => {
@@ -9,6 +9,9 @@ const CustomerVerify = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const email = location.state?.email || "";
+  const name = location.state?.name || "";
+  const password = location.state?.password || "";
+  const mode = location.state?.mode || "signup"; // "signup" | "existing"
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -48,12 +51,25 @@ const CustomerVerify = () => {
       setError("Please enter a valid 6-digit code.");
       return;
     }
+
+    const hasSignupDetails = !!(name && password);
+
     setLoading(true);
     setError('');
     setInfo('');
 
     try {
-      await verifyOtpCode({ email, code, role: 'customer' });
+      if (mode === "existing" || !hasSignupDetails) {
+        await verifyExistingEmailOtp({ email, otp: code, role: 'customer' });
+      } else {
+        await verifySignupEmailOtp({
+          email,
+          otp: code,
+          role: 'customer',
+          name,
+          password,
+        });
+      }
       toast.success("Verification Successful! Please log in.");
       navigate('/customer-login');
     } catch (error) {
@@ -73,7 +89,7 @@ const CustomerVerify = () => {
     setInfo('');
 
     try {
-      await requestOtp({ email, role: 'customer' });
+      await resendSignupEmailOtp({ email, role: 'customer', purpose: 'email_verification' });
       setInfo('New code sent successfully!');
       setTimer(30);
     } catch (err) {
