@@ -4,7 +4,7 @@ import crypto from "crypto";
 import User from "../models/User.js";
 import Merchant from "../models/Merchant.js";
 import { sendWelcomeEmail, sendMerchantWelcomeEmail } from "../utils/sendEmail.js";
-import { sendOtpEmail } from "../utils/sendOtpEmail.js";
+import { sendOtpEmailDirectly } from "../services/emailQueueService.js";
 import { OTP_CONFIG as EMAIL_OTP_CONFIG, sendOtp as sendEmailOtpViaQueue } from "../services/otpService.js";
 import {
   generateOtp,
@@ -171,8 +171,17 @@ export const sendSignupOtp = async (req, res) => {
       await pendingAccount.save();
     }
 
-    // Send OTP email (don't await to speed up response)
-    sendOtpEmail({ email: normalizedEmail, otp, purpose: "verify" }).catch((err) => {
+    // Send OTP email directly (don't await to speed up response)
+    sendOtpEmailDirectly({ 
+      to: normalizedEmail, 
+      otp, 
+      purpose: "verify",
+      expiryMinutes: OTP_CONFIG.EXPIRY_MINUTES 
+    }).then((result) => {
+      if (!result.sent) {
+        console.error("[Auth] Failed to send signup OTP email:", result.error);
+      }
+    }).catch((err) => {
       console.error("[Auth] Failed to send signup OTP email:", err.message);
     });
 
@@ -341,13 +350,16 @@ export const forgotPassword = async (req, res) => {
     account.otpLastSentAt = new Date();
     await account.save();
 
-    // Send OTP email
-    const accountName = role === "merchant" ? account.shopName : account.name;
-    sendOtpEmail({ 
-      email: normalizedEmail, 
+    // Send OTP email directly (don't await to speed up response)
+    sendOtpEmailDirectly({ 
+      to: normalizedEmail, 
       otp, 
       purpose: "reset",
-      name: accountName 
+      expiryMinutes: OTP_CONFIG.EXPIRY_MINUTES 
+    }).then((result) => {
+      if (!result.sent) {
+        console.error("[Auth] Failed to send reset OTP email:", result.error);
+      }
     }).catch((err) => {
       console.error("[Auth] Failed to send reset OTP email:", err.message);
     });

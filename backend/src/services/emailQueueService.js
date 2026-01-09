@@ -207,6 +207,59 @@ export const sendEmailNow = async ({ to, subject, html, emailType = "system" }) 
   }
 };
 
+/**
+ * Send OTP email directly (bypasses queue for time-sensitive OTPs)
+ * This is the PRIMARY method for sending OTP emails
+ * 
+ * @param {Object} options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.otp - The 6-digit OTP code
+ * @param {string} options.purpose - "verify" or "reset"
+ * @param {number} [options.expiryMinutes] - OTP validity in minutes
+ * @returns {Promise<{sent: boolean, error?: string}>}
+ */
+export const sendOtpEmailDirectly = async ({ to, otp, purpose, expiryMinutes = 10 }) => {
+  const sg = ensureSendGridReady();
+  if (!sg.ok) {
+    console.error(`[EmailQueue] ❌ SendGrid not ready for OTP email: ${sg.error}`);
+    return { sent: false, error: sg.error };
+  }
+
+  // Generate OTP email content
+  const subject = purpose === "reset" 
+    ? "Reset your GreenReceipt password 🔑"
+    : "Verify your GreenReceipt account 🔐";
+  
+  const html = generateOtpEmailHtml(otp, purpose, expiryMinutes);
+
+  try {
+    console.log(`[EmailQueue] 📧 Sending OTP email to ${to}...`);
+    
+    const [response] = await sgMail.send({
+      to,
+      from: { email: sg.fromEmail, name: "GreenReceipt" },
+      subject,
+      html,
+    });
+
+    console.log(`[EmailQueue] ✅ OTP email sent to ${to} (${response.statusCode})`);
+    return { 
+      sent: true, 
+      messageId: response.headers?.["x-message-id"],
+      statusCode: response.statusCode,
+    };
+  } catch (error) {
+    const errorDetails = formatSendGridError(error);
+    console.error(`[EmailQueue] ❌ OTP email failed to ${to}:`, errorDetails);
+    return { 
+      sent: false, 
+      error: error.message, 
+      details: errorDetails,
+      statusCode: errorDetails.statusCode,
+    };
+  }
+};
+
 // ===========================================
 // BACKGROUND WORKER
 // ===========================================
@@ -680,6 +733,7 @@ function adjustColor(hex, percent) {
 export default {
   queueEmail,
   sendEmailNow,
+  sendOtpEmailDirectly,
   processEmailQueue,
   startEmailWorker,
   stopEmailWorker,

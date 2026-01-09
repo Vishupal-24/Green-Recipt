@@ -17,7 +17,7 @@
 import EmailOtp from "../models/EmailOtp.js";
 import User from "../models/User.js";
 import Merchant from "../models/Merchant.js";
-import { queueEmail, sendEmailNow } from "./emailQueueService.js";
+import { queueEmail, sendEmailNow, sendOtpEmailDirectly } from "./emailQueueService.js";
 
 // ===========================================
 // CONFIGURATION
@@ -103,27 +103,37 @@ export const sendOtp = async ({
       role,
     });
 
-    // 4. Queue email for sending (background, non-blocking)
+    // 4. Send OTP email IMMEDIATELY (not queued - OTPs are time-sensitive)
     const emailType = purpose === OTP_CONFIG.PURPOSES.PASSWORD_RESET 
       ? "otp_password_reset" 
       : "otp_verification";
 
-    const idempotencyKey = `${emailType}:${normalizedEmail}:${otpRecord._id}`;
-
-    queueEmail({
+    // OTP emails must be sent immediately for best user experience
+    // We use sendOtpEmailDirectly which bypasses the queue
+    sendOtpEmailDirectly({
       to: normalizedEmail,
-      emailType,
-      data: {
-        otp: plainOtp,
-        expiryMinutes: OTP_CONFIG.EXPIRY_MINUTES,
-      },
-      idempotencyKey,
-      priority: 1, // High priority for OTP emails
-      userId,
-      sourceType: "api",
-      metadata: { otpPurpose: purpose, requestIp },
+      otp: plainOtp,
+      purpose: purpose === OTP_CONFIG.PURPOSES.PASSWORD_RESET ? "reset" : "verify",
+      expiryMinutes: OTP_CONFIG.EXPIRY_MINUTES,
+    }).then((result) => {
+      if (result.sent) {
+        console.log(`[OTPService] ✅ OTP email sent to ${normalizedEmail}`);
+      } else {
+        console.error(`[OTPService] ❌ Failed to send OTP email: ${result.error}`);
+        // Fallback: queue for retry
+        queueEmail({
+          to: normalizedEmail,
+          emailType,
+          data: { otp: plainOtp, expiryMinutes: OTP_CONFIG.EXPIRY_MINUTES },
+          idempotencyKey: `${emailType}:${normalizedEmail}:${otpRecord._id}`,
+          priority: 1,
+          userId,
+          sourceType: "api",
+          metadata: { otpPurpose: purpose, requestIp, retryAfterDirectFail: true },
+        }).catch(console.error);
+      }
     }).catch((err) => {
-      console.error(`[OTPService] Email queue error:`, err.message);
+      console.error(`[OTPService] OTP email error:`, err.message);
     });
 
     // 5. Log OTP in development only (NEVER in production)

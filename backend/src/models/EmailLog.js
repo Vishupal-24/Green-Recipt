@@ -293,6 +293,7 @@ emailLogSchema.statics.getQueuedEmails = async function (batchSize = 10) {
       },
     ],
   })
+    .select("+htmlContent")
     .sort({ priority: 1, queuedAt: 1 })
     .limit(batchSize);
 };
