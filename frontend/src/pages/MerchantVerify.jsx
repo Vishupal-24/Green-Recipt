@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { resendSignupEmailOtp, verifySignupEmailOtp } from '../services/api.js';
+import { resendSignupEmailOtp, verifyExistingEmailOtp, verifySignupEmailOtp } from '../services/api.js';
 import useForceLightMode from "../hooks/useForceLightMode";
 
 const MerchantVerify = () => {
@@ -11,6 +11,7 @@ const MerchantVerify = () => {
   const email = location.state?.email || "business email";
   const shopName = location.state?.shopName || "";
   const password = location.state?.password || "";
+  const mode = location.state?.mode || "signup"; // "signup" | "existing"
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -42,23 +43,24 @@ const MerchantVerify = () => {
       return;
     }
 
-    if (!shopName || !password) {
-      setError("Missing signup details. Go back to sign up and try again.");
-      return;
-    }
+    const hasSignupDetails = !!(shopName && password);
 
     setLoading(true);
     setError('');
     setInfo('');
 
     try {
-      await verifySignupEmailOtp({
-        email,
-        otp: code,
-        role: 'merchant',
-        shopName,
-        password,
-      });
+      if (mode === "existing" || !hasSignupDetails) {
+        await verifyExistingEmailOtp({ email, otp: code, role: 'merchant' });
+      } else {
+        await verifySignupEmailOtp({
+          email,
+          otp: code,
+          role: 'merchant',
+          shopName,
+          password,
+        });
+      }
       toast.success("Verification Successful! Please log in.");
       navigate('/merchant-login');
     } catch (error) {

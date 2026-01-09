@@ -39,6 +39,10 @@ const CustomerLogin = () => {
           actualRole: responseData.actualRole,
           message: responseData.message,
         });
+      } else if (responseData?.code === "EMAIL_NOT_VERIFIED") {
+        navigate("/verify-customer", {
+          state: { email, role: "customer", mode: "existing" },
+        });
       } else {
         const message = responseData?.message || "Login failed";
         setError(message);

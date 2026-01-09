@@ -41,6 +41,10 @@ const MerchantLogin = () => {
           actualRole: responseData.actualRole,
           message: responseData.message,
         });
+      } else if (responseData?.code === "EMAIL_NOT_VERIFIED") {
+        navigate("/verify-merchant", {
+          state: { email, role: "merchant", mode: "existing" },
+        });
       } else {
         setError(responseData?.message || "Login failed");
       }
