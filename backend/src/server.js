@@ -9,12 +9,15 @@ import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import emailOtpRoutes from "./routes/emailOtpRoutes.js";
 import receiptRoutes from "./routes/receiptRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import merchantRoutes from "./routes/merchantRoutes.js";
 import billRoutes from "./routes/billRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import { startScheduler, stopScheduler } from "./services/reminderScheduler.js";
+import { startEmailWorker, stopEmailWorker } from "./services/emailQueueService.js";
+import { startEmailReminderScheduler, stopEmailReminderScheduler } from "./services/billReminderEmailService.js";
 
 const app = express();
 
@@ -74,14 +77,17 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", emailOtpRoutes); // Email OTP routes (mounted under /api/auth)
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/merchant", merchantRoutes);
 app.use("/api/bills", billRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-// Start reminder scheduler after routes are set up
-startScheduler();
+// Start schedulers and background workers
+startScheduler();       // In-app notification scheduler
+startEmailWorker();     // Email queue processor
+startEmailReminderScheduler(); // Bill reminder email scheduler
 
 // Error handlers
 app.use((req, res) => {
@@ -105,6 +111,8 @@ const server = app.listen(PORT, () => {
 process.on("SIGTERM", () => {
   console.log("SIGTERM received. Shutting down gracefully...");
   stopScheduler();
+  stopEmailWorker();
+  stopEmailReminderScheduler();
   server.close(() => {
     console.log("Process terminated");
     process.exit(0);
